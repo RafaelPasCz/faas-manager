@@ -31,35 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-
-# Maven
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-dependency-reduced-pom.xml
-buildNumber.properties
-.mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
-
-# IDEs (IntelliJ, Eclipse, VS Code)
-.idea/
-*.iml
-*.iws
-*.classpath
-*.project
-*.settings/
-.vscode/
-.factorypath
-
-# Logs e arquivos temporários
-*.log
-logs/
-hs_err_pid*
-
-# Sistema Operacional
-.DS_Store
-Thumbs.db
