@@ -34,12 +34,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceEditException.class)
     public ResponseEntity<ErrorResponse> handleResourceEditException(ResourceEditException ex, WebRequest request){
-        ErrorResponse error = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-        "Erro ao Editar o Recurso",
-        ex.getMessage(),
-        request.getDescription(false).replace("/uri=","")
+        ErrorResponse error = new ErrorResponse(
+            HttpStatus.UNPROCESSABLE_CONTENT.value(), // Ajustado para 422
+            "Erro ao Editar o Recurso",
+            ex.getMessage(),
+            request.getDescription(false).replace("uri=","") // Removida a barra extra
         );
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(error, HttpStatus.UNPROCESSABLE_CONTENT);
     }
 
     @ExceptionHandler(AttributeException.class)
@@ -47,7 +48,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(HttpStatus.BAD_REQUEST.value(),
         "Erro de atributo",
         ex.getMessage(),
-        request.getDescription(false).replace("/uri=","")
+        request.getDescription(false).replace("uri=","")
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
@@ -58,7 +59,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
         "Erro ao deletar o Recurso",
         ex.getMessage(),
-        request.getDescription(false).replace("/uri=","")
+        request.getDescription(false).replace("uri=","")
         );
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -68,7 +69,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
         "Erro ao criar o Recurso",
         ex.getMessage(),
-        request.getDescription(false).replace("/uri=","")
+        request.getDescription(false).replace("uri=","")
         );
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }

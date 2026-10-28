@@ -3,8 +3,6 @@
 package com.portfolio.faasmanager.model;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
-import com.portfolio.faasmanager.model.Function;
-
 import jakarta.persistence.*;
 
 @Entity
