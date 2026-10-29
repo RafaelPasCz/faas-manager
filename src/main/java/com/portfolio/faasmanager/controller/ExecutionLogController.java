@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/execution-logs")
+@RequestMapping("/api/execution-logs")
 @CrossOrigin(origins = "http://localhost:4200")
 
 public class ExecutionLogController {

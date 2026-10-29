@@ -28,7 +28,7 @@ import com.portfolio.faasmanager.repository.DeviceRepository;
 import com.portfolio.faasmanager.service.PrometheusService;
 
 @RestController
-@RequestMapping("/devices")
+@RequestMapping("/api/devices")
 @CrossOrigin(origins = "http://localhost:4200")
 public class DeviceController {
     private final DeviceRepository repository;
