@@ -119,9 +119,11 @@ public class DeviceController {
     @ResponseStatus(HttpStatus.CREATED)
     public Device createNewDevice(@RequestBody Device device) {
 
-        if (device.getName() == null) 
+        if (device.getName() == null || device.getName().isEmpty()){ 
             throw new AttributeException("O nome não deve ser nulo");
-        
+        }
+
+
         try {
             return repository.save(device);
         } catch (DataIntegrityViolationException e) {
