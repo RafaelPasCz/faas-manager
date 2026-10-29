@@ -1,5 +1,7 @@
 package com.portfolio.faasmanager.controller;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import com.portfolio.faasmanager.exception.AttributeException;
 import com.portfolio.faasmanager.model.ExecutionLog;
 import com.portfolio.faasmanager.repository.ExecutionLogRepository;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,15 @@ public class ExecutionLogController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ExecutionLog createNewExecutionLog(@RequestBody ExecutionLog log){
+        if(log.getExecutedAt() == null){
+            throw new AttributeException("Log não salva: Data e hora da execução faltando");
+        }
+        if (log.getFunction() == null){
+            throw new AttributeException("Log não salva: Função faltando");
+        }
+        if (log.getExecutedAt().isAfter(LocalDateTime.now())){
+            throw new AttributeException("Log não salva: ExecutedAt no futuro");
+        }
         return repository.save(log);
     }
 
