@@ -16,7 +16,7 @@ public class ExecutionLog {
     @Column(name = "executed_at", nullable = false, updatable = false) // updatable = false impede que alguém altere a data do log depois
     private LocalDateTime executedAt;
 
-    @Column(name = "request_duration_ms", nullable = false, updatable = false)
+    @Column(name = "request_duration_ms", updatable = false)
     private Long requestDurationMs;
 
     @Column(nullable = false, updatable = false)
