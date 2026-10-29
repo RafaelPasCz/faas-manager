@@ -26,7 +26,7 @@ import com.portfolio.faasmanager.repository.FunctionRepository;
 
 
 @RestController
-@RequestMapping("/functions")
+@RequestMapping("/function")
 @CrossOrigin(origins = "http://localhost:4200")
 
 public class FunctionController {
@@ -41,6 +41,15 @@ public class FunctionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Function createNewFunction(@RequestBody Function function){
+        if (function.getFunctionUrl() == null || function.getFunctionUrl().trim().isEmpty()){
+            throw new AttributeException("A url da função deve ser informada");
+        }
+        if (function.getDevice() == null || function.getFunctionUrl().trim().isEmpty()){
+            throw new AttributeException("A função deve obrigatóriamente estar associada a um dispositivo");
+        }
+        if (function.getName() == null || function.getFunctionUrl().trim().isEmpty()){
+            throw new AttributeException("A função deve obrigatóriamente ter um nome");
+        }
         return functionRepository.save(function);
     }
 
