@@ -32,9 +32,6 @@ public class ExecutionLogController {
         if (log.getFunction() == null){
             throw new AttributeException("Log não salva: Função faltando");
         }
-        if (log.getExecutedAt().isAfter(LocalDateTime.now())){
-            throw new AttributeException("Log não salva: ExecutedAt no futuro");
-        }
         return repository.save(log);
     }
 
