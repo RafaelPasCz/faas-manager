@@ -109,7 +109,7 @@ public class DeviceController {
         return repository.findById(id)
         .map(device -> {
             device.setPrometheusUrl(null);
-            repository.save(device); // Salva no banco sem criar variável inútil
+            repository.save(device);
             return ResponseEntity.noContent().<Void>build();
         })
             .orElseThrow(() -> new ResourceDeleteException("Erro ao deletar a URL do dispositivo: " + id));
@@ -121,6 +121,12 @@ public class DeviceController {
 
         if (device.getName() == null || device.getName().isEmpty()){ 
             throw new AttributeException("O nome não deve ser nulo");
+        }
+
+        String ipv4Regex = "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$";
+
+        if (device.getIpAddress() != null && !device.getIpAddress().matches(ipv4Regex)) {
+            throw new AttributeException("O endereço IP fornecido é inválido.");
         }
 
 
@@ -161,4 +167,49 @@ public class DeviceController {
     public List<Device> findByName(@RequestParam String name){
         return repository.findByName(name);
     }
+
+    @GetMapping("/{id}/created-date")
+    public ResponseEntity<Device> getCreationDate(@PathVariable Long id) {
+        if (id == null) {
+            throw new AttributeException("O Id do dispositivo deve ser informado");
+        }
+        
+        return repository.findById(id)
+            .map(ResponseEntity::ok)
+            .orElseThrow(() -> new ResourceNotFoundException("Dispositivo não encontrado"));
+    }
+    
+    @GetMapping("/{id}/ip-address")
+    public ResponseEntity<Device> getIpAddress(@PathVariable Long id) {
+        if (id == null) {
+            throw new AttributeException("O Id do dispositivo deve ser informado");
+        }
+        
+        return repository.findById(id)
+            .map(ResponseEntity::ok)
+            .orElseThrow(() -> new ResourceNotFoundException("Dispositivo não encontrado"));
+    }
+    
+    @PutMapping("/{id}/update-ip")
+    public ResponseEntity<Device> updateDeviceIp(@PathVariable Long id, @RequestParam String newIpAddress) {
+        
+        if (newIpAddress == null || newIpAddress.trim().isEmpty()) {
+            throw new AttributeException("O novo IP deve ser informado");
+        }
+    
+        String ipv4Regex = "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$";
+    
+        if (!newIpAddress.matches(ipv4Regex)) {
+            throw new AttributeException("O endereço IP fornecido é inválido. Envie um IPv4 válido.");
+        }
+    
+        return repository.findById(id)
+            .map(device -> {
+                device.setIpAddress(newIpAddress);
+                Device updated = repository.save(device);
+                return ResponseEntity.ok(updated);
+            }).orElseThrow(() -> new ResourceEditException("Erro ao editar o IP do dispositivo com o id: " + id));
+    }
+
+    
 }

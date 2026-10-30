@@ -31,6 +31,9 @@ public class Device{
     @Column(nullable = false, length = 100, unique = true)
     private String name;
 
+    @Column(name = "ip_address", length = 45) // Suporta IPv4
+    private String ipAddress;
+
     //deixar o prometheus opcional pois pode ter dispositivos que não suportam
     @Column(name = "prometheus_url", length = 300, nullable = true, unique = true)
     private String prometheusUrl;
@@ -41,6 +44,7 @@ public class Device{
     @CreatedDate 
     @Column(name = "saved_at", nullable = false, updatable = false)
     private LocalDateTime savedAt;
+
 
     public Device(){
 
@@ -55,6 +59,10 @@ public class Device{
 
     public String getName(){
         return name;
+    }
+
+    public String getIpAddress(){
+        return ipAddress;
     }
 
     public Long getId(){
@@ -75,6 +83,10 @@ public class Device{
 
     public void setPrometheusUrl(String newPrometheusUrl){
         this.prometheusUrl = newPrometheusUrl;
+    }
+
+    public void setIpAddress(String newIpAdress){
+        this.ipAddress = newIpAdress;
     }
 
     
