@@ -186,6 +186,17 @@ public class FunctionController {
         return functionRepository.findByImplementationModel(implementationModel);
     }
 
+    @GetMapping("/{id}/created-date")
+    public ResponseEntity<Function> getCreationDate(@PathVariable Long id) {
+        if (id == null) {
+            throw new AttributeException("O Id da funcao deve ser informado");
+        }
+        
+        return functionRepository.findById(id)
+            .map(ResponseEntity::ok)
+            .orElseThrow(() -> new ResourceNotFoundException("funcao não encontrada"));
+    }    
+
     
 
 
