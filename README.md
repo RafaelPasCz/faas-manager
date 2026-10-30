@@ -1,37 +1,73 @@
-# FaaS Manager (Admin API)
+# FaaS Manager API
 
-O **FaaS Manager** é uma API REST gerencial desenvolvida em Java com Spring Boot, projetada para fornecer uma visão administrativa sobre infraestruturas distribuídas de *Function as a Service* (FaaS). 
+API RESTful desenvolvida para orquestração, monitoramento e gerenciamento de infraestrutura FaaS (Function as a Service) em ambientes distribuídos (Edge e Fog Computing). O sistema gerencia o ciclo de vida de dispositivos (nós de processamento), funções serverless e centraliza a telemetria através de logs de execução imutáveis e integração com Prometheus.
 
-Este projeto atua como um painel de controle (CRUD) para que administradores de sistemas e engenheiros de infraestrutura possam cadastrar nós de execução (Edge, Fog, Cloud), gerenciar as funções serverless alocadas e consultar pontualmente a integridade da rede. O objetivo principal do repositório é demonstrar a construção de uma API corporativa estruturada, aplicando padrões arquiteturais de mercado e boas práticas de desenvolvimento no ecossistema Spring.
+## Tecnologias Utilizadas
+* **Java 17+**
+* **Spring Boot 3** (Web, Data JPA)
+* **PostgreSQL**
+* **Hibernate** (Auditoria de dados via `AuditingEntityListener`)
+* **Maven**
 
-## 🏗️ Objetivo e Casos de Uso
+## Pré-requisitos
+* [JDK 17](https://jdk.java.net/17/) ou superior instalado.
+* [PostgreSQL](https://www.postgresql.org/download/) rodando localmente (nativamente ou via Docker).
+* [Maven](https://maven.apache.org/) instalado (ou utilize o wrapper `mvnw` incluso no projeto).
 
-A aplicação foi desenhada para o uso humano (visão gerencial e administrativa), separando as responsabilidades de cadastro da complexidade do roteamento dinâmico de rede. Suas principais capacidades incluem:
+## Como executar localmente
 
-* **Gestão de Inventário (CRUD):** Cadastro completo de dispositivos físicos, definindo suas restrições operacionais (limites de CPU e RAM) e categorização topológica.
-* **Mapeamento de Funções:** Associação lógica de quais funções FaaS estão disponíveis em quais nós da infraestrutura.
-* **Health Check Gerencial:** Integração direta com a API do **Prometheus** (via `PrometheusService`) para permitir que administradores consultem o estado atual dos dispositivos cadastrados.
+### 1. Configuração do Banco de Dados
+Acesse o seu PostgreSQL pelo terminal ou via interface gráfica (como pgAdmin/DBeaver) e crie o banco de dados e as credenciais utilizadas pelo projeto:
 
-## 🚀 Tecnologias e Padrões Aplicados
+```sql
+-- Criar o banco de dados
+CREATE DATABASE faas_manager;
 
-* **Java 17+** e **Spring Boot** (Web, Data JPA)
-* **Padrão MVC / Camadas:** Separação estrita de responsabilidades (`controller`, `service`, `repository`, `model`, `exception`).
-* **Hibernate:** Mapeamento Objeto-Relacional (ORM) para persistência consistente de dados.
-* **Tratamento Global de Exceções:** Uso de `@ControllerAdvice` para interceptar erros e retornar respostas HTTP padronizadas e amigáveis para o cliente.
-* **Integração REST externa:** Consumo de métricas da API do Prometheus.
+-- Criar o usuário administrador (caso ainda não exista)
+CREATE USER faas_admin WITH ENCRYPTED PASSWORD '1234';
 
-## 📦 Estrutura dos Endpoints
+-- Conceder privilégios ao usuário
+GRANT ALL PRIVILEGES ON DATABASE faas_manager TO faas_admin;
+```
 
-A API expõe as seguintes rotas de gerenciamento:
+### 2. Configurações de Ambiente (`application.properties`)
+Certifique-se de que o arquivo `src/main/resources/application.properties` está configurado corretamente com a string de conexão e o controle de migração do Hibernate. O arquivo deve conter:
 
-* **`/api/devices`**: Permite criar, ler, atualizar e deletar os dispositivos de execução da rede, além de definir suas capacidades computacionais.
-* **`/api/functions`**: Gerencia o catálogo de funções serverless e seus vínculos com os nós físicos.
-* **`/api/logs`**: Registro e consulta do histórico de métricas ou eventos da infraestrutura.
+```properties
+# Conexão com o PostgreSQL
+spring.datasource.url=jdbc:postgresql://localhost:5432/faas_manager
+spring.datasource.username=faas_admin
+spring.datasource.password=1234
+spring.datasource.driver-class-name=org.postgresql.Driver
 
-## 🛠️ Como Executar Localmente
+# Configurações do JPA / Hibernate
+# "update" criará/atualizará as tabelas automaticamente sem apagar os dados existentes
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
 
-Certifique-se de ter o Java 17+ e o Maven instalados. Configure os dados de conexão do seu banco de dados relacional no arquivo `application.properties`.
+# (Opcional) Porta do servidor
+server.port=8080
+```
 
-1. Clone o repositório:
-   ```bash
-   git clone [https://github.com/RafaelPasCz/faas-manager.git](https://github.com/RafaelPasCz/faas-manager.git)
+### 3. Rodando o Projeto
+Abra o terminal na pasta raiz do projeto (onde está o arquivo `pom.xml`) e execute o comando abaixo para compilar e iniciar a aplicação:
+
+```bash
+# Se tiver o Maven instalado globalmente:
+mvn spring-boot:run
+
+# Se for utilizar o Maven Wrapper do projeto:
+./mvnw spring-boot:run     # (Linux/macOS)
+mvnw.cmd spring-boot:run   # (Windows)
+```
+
+O servidor iniciará localmente e a API estará disponível no endereço: `http://localhost:8080/api/`
+
+---
+
+## Estrutura de Endpoints (Visão Geral)
+
+* **`/api/devices`**: Cadastro e edição de hardware de borda (incluindo validação de IPv4 e URL do Prometheus).
+* **`/api/functions`**: Gerenciamento das funções serverless disponíveis no cluster.
+* **`/api/execution-logs`**: Ingestão de telemetria. Logs possuem datas de registro automáticas (`savedAt`) e são estritamente imutáveis (append-only) para garantir a integridade da auditoria de falhas e timeouts.
