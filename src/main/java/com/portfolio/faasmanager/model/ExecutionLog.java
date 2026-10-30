@@ -34,6 +34,9 @@ public class ExecutionLog {
     @Column(name = "executed_at", nullable = false, updatable = false) // updatable = false impede que alguém altere a data do log depois
     private LocalDateTime executedAt;
 
+    @Column(name = "status_code", updatable = false)
+    private Integer statusCode;
+
     @Column(name = "request_duration_ms", updatable = false)
     private Long requestDurationMs;
 
@@ -82,6 +85,10 @@ public class ExecutionLog {
 
     public LocalDateTime getSavedAt(){
         return savedAt;
+    }
+
+    public Integer getStatusCode() {
+        return statusCode;
     }
 
 }

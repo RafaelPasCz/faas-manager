@@ -18,7 +18,11 @@ public interface ExecutionLogRepository extends JpaRepository<ExecutionLog, Long
 
     List<ExecutionLog> findByFunction_Device_Name(String deviceName);
 
-    List<ExecutionLog> findByExecutedAtBetween(LocalDateTime start, LocalDateTime end);    
+    List<ExecutionLog> findByExecutedAtBetween(LocalDateTime start, LocalDateTime end);
+    
+    List<ExecutionLog> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);    
+
+    List<ExecutionLog> findByStatusCode(Integer statusCode);
     
     
 }
