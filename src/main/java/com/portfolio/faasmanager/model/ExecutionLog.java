@@ -2,17 +2,35 @@
 
 package com.portfolio.faasmanager.model;
 import java.time.LocalDateTime;
-import org.hibernate.annotations.CreationTimestamp;
-import jakarta.persistence.*;
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "tb_execution_log")
+@EntityListeners(AuditingEntityListener.class)
+
+
 public class ExecutionLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @CreationTimestamp
+    @CreatedDate 
+    @Column(name = "saved_at", nullable = false, updatable = false)
+    private LocalDateTime savedAt; 
+
+
     @Column(name = "executed_at", nullable = false, updatable = false) // updatable = false impede que alguém altere a data do log depois
     private LocalDateTime executedAt;
 
@@ -62,20 +80,8 @@ public class ExecutionLog {
         return id;
     }
 
-    public void setSuccess(boolean newSuccess){
-        this.success = newSuccess;
-    }
-
-    public void setFunction(Function newFunction){
-        this.function = newFunction;
-    }
-
-    public void setExecutedAt(LocalDateTime newExecutedAt){
-        this.executedAt = newExecutedAt;
-    }
-
-    public void setRequestDurationMs(Long newRequestDurationMs){
-        this.requestDurationMs = newRequestDurationMs;
+    public LocalDateTime getSavedAt(){
+        return savedAt;
     }
 
 }

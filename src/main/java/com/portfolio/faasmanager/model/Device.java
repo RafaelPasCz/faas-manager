@@ -2,11 +2,16 @@
 
 package com.portfolio.faasmanager.model;
 
+import java.time.LocalDateTime;
 import java.util.List;
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,6 +20,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "tb_device")
+@EntityListeners(AuditingEntityListener.class)
 
 public class Device{
     @Id
@@ -31,6 +37,10 @@ public class Device{
 
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Function> functions;
+
+    @CreatedDate 
+    @Column(name = "saved_at", nullable = false, updatable = false)
+    private LocalDateTime savedAt;
 
     public Device(){
 
@@ -53,6 +63,10 @@ public class Device{
 
     public String getPrometheusUrl(){
         return prometheusUrl;
+    }
+
+    public LocalDateTime getSavedAt(){
+        return savedAt;
     }
 
     public void setName(String newName){

@@ -5,11 +5,19 @@ package com.portfolio.faasmanager.model;
 
 
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
+
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "tb_function")
+@EntityListeners(AuditingEntityListener.class)
+
+
 public class Function{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,6 +42,10 @@ public class Function{
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Device device;
 
+    @CreatedDate 
+    @Column(name = "saved_at", nullable = false, updatable = false)
+    private LocalDateTime savedAt;
+
     public Function() {
     }
 
@@ -54,6 +66,10 @@ public class Function{
     
     public String getName() {
         return name;
+    }
+
+    public LocalDateTime getSavedAt(){
+        return savedAt;
     }
 
     public void setName(String name) { 
