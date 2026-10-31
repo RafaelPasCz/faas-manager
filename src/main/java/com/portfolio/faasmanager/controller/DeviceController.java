@@ -86,17 +86,18 @@ public class DeviceController {
         }
         
         return repository.findById(id)
-            .map(device -> {
-                device.setName(deviceDetails.getName());
-                device.setIpAddress(deviceDetails.getIpAddress());
-                device.setPrometheusUrl(deviceDetails.getPrometheusUrl());
-                device.setPrometheusHostId(deviceDetails.getPrometheusHostId());
-                device.setIsPrometheusHost(deviceDetails.getIsPrometheusHost());
-                device.setIsFunctionHost(deviceDetails.getIsFunctionHost());
-                
-                Device updated = repository.save(device);
-                return ResponseEntity.ok(updated);
-            }).orElseThrow(() -> new ResourceEditException("Erro ao editar o dispositivo: " + id));
+        .map(device -> {
+            device.setName(deviceDetails.getName());
+            device.setIpAddress(deviceDetails.getIpAddress());
+            device.setPrometheusUrl(deviceDetails.getPrometheusUrl());
+            device.setPrometheusHostId(deviceDetails.getPrometheusHostId());
+            device.setIsPrometheusHost(deviceDetails.getIsPrometheusHost());
+            device.setIsFunctionHost(deviceDetails.getIsFunctionHost());
+            device.setNodeExporterUrl(deviceDetails.getNodeExporterUrl());
+            
+            Device updated = repository.save(device);
+            return ResponseEntity.ok(updated);
+        }).orElseThrow(() -> new ResourceEditException("Erro ao editar o dispositivo: " + id));
     }
 
     @DeleteMapping("/{id}")
@@ -244,7 +245,7 @@ public class DeviceController {
         
         return repository.findById(id)
             .map(device -> {
-                device.setIsPrometheusHost(isPrometheusHost); // Utiliza o setter do Device.java
+                device.setIsPrometheusHost(isPrometheusHost); 
                 Device updated = repository.save(device);
                 return ResponseEntity.ok(updated);
             }).orElseThrow(() -> new ResourceEditException("Erro ao editar o status de Prometheus Host do dispositivo com id: " + id));
@@ -258,7 +259,7 @@ public class DeviceController {
         
         return repository.findById(id)
             .map(device -> {
-                device.setIsFunctionHost(isFunctionHost); // Utiliza o setter do Device.java
+                device.setIsFunctionHost(isFunctionHost); 
                 Device updated = repository.save(device);
                 return ResponseEntity.ok(updated);
             }).orElseThrow(() -> new ResourceEditException("Erro ao editar o status de Function Host do dispositivo com id: " + id));
@@ -269,7 +270,7 @@ public class DeviceController {
         if (id == null) throw new AttributeException("O Id do dispositivo deve ser informado");
         
         return repository.findById(id)
-            .map(device -> ResponseEntity.ok(device.getIsPrometheusHost())) // Utiliza o getter do Device.java
+            .map(device -> ResponseEntity.ok(device.getIsPrometheusHost())) 
             .orElseThrow(() -> new ResourceNotFoundException("Dispositivo não encontrado"));
     }
 
@@ -278,8 +279,39 @@ public class DeviceController {
         if (id == null) throw new AttributeException("O Id do dispositivo deve ser informado");
         
         return repository.findById(id)
-            .map(device -> ResponseEntity.ok(device.getIsFunctionHost())) // Utiliza o getter do Device.java
+            .map(device -> ResponseEntity.ok(device.getIsFunctionHost()))
             .orElseThrow(() -> new ResourceNotFoundException("Dispositivo não encontrado"));
+    }
+
+
+    @PutMapping("/{id}/update-node-exporter-url")
+    public ResponseEntity<Device> updateNodeExporterUrl(@PathVariable Long id, @RequestParam String newNodeExporterUrl) {
+        
+        if (newNodeExporterUrl == null || newNodeExporterUrl.trim().isEmpty()) {
+            throw new AttributeException("A nova URL do Node Exporter não pode ser vazia");
+        }
+
+        return repository.findById(id)
+            .map(device -> {
+                device.setNodeExporterUrl(newNodeExporterUrl);
+                Device updated = repository.save(device);
+                return ResponseEntity.ok(updated);
+            }).orElseThrow(() -> new ResourceEditException("Erro ao editar a URL do Node Exporter do dispositivo com id: " + id));
+    }
+
+    @DeleteMapping("/{id}/delete-node-exporter-url")
+    public ResponseEntity<Void> deleteNodeExporterUrl(@PathVariable Long id) {
+        if (id == null) {
+            throw new AttributeException("O id não deve ser nulo");
+        }
+        
+        return repository.findById(id)
+            .map(device -> {
+                device.setNodeExporterUrl(null);
+                repository.save(device);
+                return ResponseEntity.noContent().<Void>build();
+            })
+            .orElseThrow(() -> new ResourceDeleteException("Erro ao deletar a URL do Node Exporter do dispositivo: " + id));
     }
 
     

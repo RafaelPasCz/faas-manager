@@ -59,6 +59,9 @@ public class Device{
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Function> functions;
 
+    @Column(name = "node_exporter_url", length = 300)
+    private String nodeExporterUrl;
+
     public Device(){
 
     }
@@ -72,6 +75,11 @@ public class Device{
 
     public Long getPrometheusHostId(){
         return prometheusHostId;
+    }
+
+
+    public String getNodeExporterUrl() {
+        return nodeExporterUrl;
     }
 
     public String getName(){
@@ -118,6 +126,12 @@ public class Device{
     public void setIsFunctionHost(boolean newIsFunctionHost){
         this.isFunctionHost = newIsFunctionHost;
     }
+
+
+    public void setNodeExporterUrl(String nodeExporterUrl) {
+        this.nodeExporterUrl = nodeExporterUrl;
+    }
+
 
 
     public void setName(String newName){
