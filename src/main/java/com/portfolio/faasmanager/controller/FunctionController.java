@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.portfolio.faasmanager.exception.AttributeException;
+import com.portfolio.faasmanager.exception.ResourceCreationException;
 import com.portfolio.faasmanager.exception.ResourceEditException;
 import com.portfolio.faasmanager.exception.ResourceNotFoundException;
 import com.portfolio.faasmanager.model.Device;
@@ -40,17 +41,29 @@ public class FunctionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Function createNewFunction(@RequestBody Function function){
-        if (function.getFunctionUrl() == null || function.getFunctionUrl().trim().isEmpty()){
-            throw new AttributeException("A url da função deve ser informada");
+    public Function createFunction(@RequestBody Function function) {
+        
+        if (function.getDevice() == null || function.getDevice().getId() == null) {
+            throw new AttributeException("A função deve estar vinculada ao ID de um dispositivo existente.");
         }
-        if (function.getDevice() == null || function.getFunctionUrl().trim().isEmpty()){
-            throw new AttributeException("A função deve obrigatóriamente estar associada a um dispositivo");
+
+
+        Device targetDevice = deviceRepository.findById(function.getDevice().getId())
+            .orElseThrow(() -> new ResourceNotFoundException("Dispositivo alvo não encontrado no cluster."));
+
+
+        if (!targetDevice.getIsFunctionHost()) {
+            throw new AttributeException("Operação negada: O dispositivo selecionado (ID: " 
+                + targetDevice.getId() + ") não está configurado como um host de função (isFunctionHost = false).");
         }
-        if (function.getName() == null || function.getFunctionUrl().trim().isEmpty()){
-            throw new AttributeException("A função deve obrigatóriamente ter um nome");
+        
+        function.setDevice(targetDevice);
+
+        try {
+            return functionRepository.save(function);
+        } catch (Exception e) {
+            throw new ResourceCreationException("Erro ao criar a instância da função: " + e.getMessage());
         }
-        return functionRepository.save(function);
     }
 
     @GetMapping("/find-all")
@@ -86,19 +99,6 @@ public class FunctionController {
             }).orElseThrow(() -> new ResourceEditException("Erro ao editar a função com o id: " + id));
         }
 
-    @PutMapping("{id}/edit-implementation-model")
-    public ResponseEntity<Function> updateFunctionImplementationModel(@PathVariable Long id, @RequestParam String newModel){
-        if(newModel == null || newModel.trim().isEmpty()){
-            throw new AttributeException("O novo modelo de implementação deve ser informado");
-        }
-
-        return functionRepository.findById(id)
-        .map(function -> {
-            function.setImplementationModel(newModel);
-            Function updated = functionRepository.save(function);
-            return ResponseEntity.ok(updated);
-        }).orElseThrow(() -> new ResourceEditException("Erro ao editar a função com o id: " + id));
-    }
 
     @PutMapping("/{id}/edit-device")
     public ResponseEntity<Function> updateFunctionDevice(@PathVariable Long id, @RequestParam Long newDeviceId){
@@ -123,26 +123,58 @@ public class FunctionController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Function> updateFunction(@PathVariable Long id, @RequestBody Function functionDetails) {
-        if (functionDetails.getName() == null) 
-            throw new AttributeException("O nome não deve ser nulo");
-        
-        if (functionDetails.getFunctionUrl() == null) 
-            throw new AttributeException("A url da função não deve ser nula");
-        
-        if (functionDetails.getDevice() == null) 
-            throw new AttributeException("O Id do novo dispositivo deve ser informado");
-        
-        
+        if (id == null) {
+            throw new AttributeException("O Id da função deve ser informado.");
+        }
+
         return functionRepository.findById(id)
-            .map(function -> {
-                function.setName(functionDetails.getName());
-                function.setFunctionUrl(functionDetails.getFunctionUrl());
-                function.setImplementationModel(functionDetails.getImplementationModel());
-                function.setDevice(functionDetails.getDevice());
-                Function updated = functionRepository.save(function);
-                return ResponseEntity.ok(updated);
-            })
-            .orElseThrow(() -> new ResourceEditException("Erro ao editar o dispostivo" + id));
+            .map(existingFunction -> {
+                
+        
+                if (functionDetails.getName() != null) {
+                    existingFunction.setName(functionDetails.getName());
+                }
+                if (functionDetails.getDockerImage() != null) {
+                    existingFunction.setDockerImage(functionDetails.getDockerImage());
+                }
+                if (functionDetails.getFunctionUrl() != null) {
+                    existingFunction.setFunctionUrl(functionDetails.getFunctionUrl());
+                }
+                if (functionDetails.getRuntime() != null) {
+                    existingFunction.setRuntime(functionDetails.getRuntime());
+                }
+
+
+                if (functionDetails.getDevice() != null && functionDetails.getDevice().getId() != null) {
+                    Long newDeviceId = functionDetails.getDevice().getId();
+                    
+
+                    if (!existingFunction.getDevice().getId().equals(newDeviceId)) {
+                        
+                        Device targetDevice = deviceRepository.findById(newDeviceId)
+                            .orElseThrow(() -> new ResourceNotFoundException("Dispositivo alvo não encontrado no cluster."));
+
+  
+                        if (!targetDevice.getIsFunctionHost()) {
+                            throw new AttributeException("Operação negada: O dispositivo selecionado (ID: " 
+                                + targetDevice.getId() + ") não suporta execução de funções (isFunctionHost = false).");
+                        }
+                        
+                        existingFunction.setDevice(targetDevice);
+                        
+                        // TODO: No futuro, a chamada para o FunctionService fazer o Tear Down no nó antigo 
+                        // e o Spin Up no nó novo entrará aqui, antes de salvar no banco.
+                    }
+                }
+
+                try {
+                    Function updated = functionRepository.save(existingFunction);
+                    return ResponseEntity.ok(updated);
+                } catch (Exception e) {
+                    throw new ResourceEditException("Erro ao editar a função: " + e.getMessage());
+                }
+                
+            }).orElseThrow(() -> new ResourceNotFoundException("Função não encontrada com o id: " + id));
     }
 
     @DeleteMapping("/{id}")
@@ -154,16 +186,7 @@ public class FunctionController {
         return ResponseEntity.notFound().build();
     }
 
-    @DeleteMapping("/{id}/delete-implementation-model")
-    public ResponseEntity<Void> deleteImplementationModel(@PathVariable Long id){
-        return functionRepository.findById(id)
-            .map(function -> {
-                function.setImplementationModel(null);
-                functionRepository.save(function);
-                return ResponseEntity.noContent().<Void>build();
-            })
-            .orElse(ResponseEntity.noContent().build()); 
-    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Function> findById(@PathVariable Long id){
         return functionRepository.findById(id)
@@ -179,11 +202,6 @@ public class FunctionController {
     @GetMapping("/find-by-device-name")
     public List<Function> findByDeviceName(@RequestParam String name){
         return functionRepository.findByDeviceName(name);
-    }
-
-    @GetMapping("/find-by-implementation-model")
-    public List<Function> findByImplementationModel(@RequestParam String implementationModel){
-        return functionRepository.findByImplementationModel(implementationModel);
     }
 
     @GetMapping("/{id}/created-date")

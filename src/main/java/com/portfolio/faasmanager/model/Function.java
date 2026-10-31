@@ -1,24 +1,25 @@
-/* Arquivo para gerar a tabela Function para o banco de dados */
-
 package com.portfolio.faasmanager.model;
-
-
-
-import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "tb_function")
 @EntityListeners(AuditingEntityListener.class)
+public class Function {
 
-
-public class Function{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,72 +27,72 @@ public class Function{
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "function_url", nullable = false, length = 100)
+    @Column(name = "docker_image", nullable = false, length = 200)
+    private String dockerImage;
+
+    @Column(name = "function_url", nullable = false, length = 300)
     private String functionUrl;
 
-    //eu posso implantar funções com o mesmo nome, porem implementações diferentes em vários devices
-    //aqui da pra adicionar uma anotação opcional para informar qual é o estilo de implantação
-    @Column(name = "implementation_model", nullable = true, length = 100)
-    private String implementationModel;
+    @Column(nullable = false, length = 50)
+    private String runtime;
 
-
-    //chave estrangeira para o device
-    //um device pode ter várias funções
-    @ManyToOne
-    @JoinColumn(name = "device_id", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Device device;
-
-    @CreatedDate 
+    @CreatedDate
     @Column(name = "saved_at", nullable = false, updatable = false)
     private LocalDateTime savedAt;
 
-    public Function() {
-    }
+    @ManyToOne
+    @JoinColumn(name = "device_id", nullable = false)
+    private Device device;
 
-    public Function(String name, String implementationModel, Device device, String functionUrl) {
-        this.name = name;
-        this.implementationModel = implementationModel;
-        this.device = device;
-        this.functionUrl = functionUrl;
-    }
+    public Function() {}
 
-    public String getFunctionUrl(){
-        return functionUrl;
-    }
-
-    public Long getId() {
+    public Long getId(){ 
         return id; 
     }
-    
-    public String getName() {
+
+    public String getName() { 
         return name;
     }
 
-    public LocalDateTime getSavedAt(){
+    public String getDockerImage() {
+        return dockerImage; 
+    }
+
+    public String getFunctionUrl() { 
+        return functionUrl; 
+    }
+
+    public String getRuntime() { 
+        return runtime; 
+    }
+
+    public LocalDateTime getSavedAt() {
         return savedAt;
     }
 
-    public void setName(String name) { 
-        this.name = name;
-    }
-    
-    public String getImplementationModel() { 
-        return implementationModel;
-    }
-    public void setImplementationModel(String implementationModel) { 
-        this.implementationModel = implementationModel;
-    }
-    
     public Device getDevice() { 
         return device;
+     }
+
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDockerImage(String dockerImage) {
+        this.dockerImage = dockerImage;
+    }
+
+    public void setFunctionUrl(String functionUrl) { 
+        this.functionUrl = functionUrl; 
+    }
+
+    public void setRuntime(String runtime) { 
+        this.runtime = runtime; 
     }
 
     public void setDevice(Device device) {
-        this.device = device; 
+        this.device = device;
     }
 
-    public void setFunctionUrl(String newFunctionUrl){
-        this.functionUrl = newFunctionUrl;
-    }
 }
