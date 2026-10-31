@@ -34,17 +34,30 @@ public class Device{
     @Column(name = "ip_address", length = 45) // Suporta IPv4
     private String ipAddress;
 
-    //deixar o prometheus opcional pois pode ter dispositivos que não suportam
-    @Column(name = "prometheus_url", length = 300, nullable = true, unique = true)
+
+    @Column(name = "is_prometheus_host", nullable = false)
+    private boolean isPrometheusHost = false;
+
+    //Campo exclusivo para devices que são hosts de prometheus
+    //TODO: adicionar validação no controller
+    @Column(name = "prometheus_url", length = 300, unique = true)
     private String prometheusUrl;
 
-    @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Function> functions;
+    //Campo exclusivo para devices que NÃO são hosts de prometheus
+    //TODO: adicionar validação no controller
+    @Column(name = "prometheus_host_id")
+    private Long prometheusHostId;
 
     @CreatedDate 
     @Column(name = "saved_at", nullable = false, updatable = false)
     private LocalDateTime savedAt;
 
+
+    @Column(name = "is_function_host", nullable = false)
+    private boolean isFunctionHost = false;
+
+    @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Function> functions;
 
     public Device(){
 
@@ -55,6 +68,10 @@ public class Device{
         this.prometheusUrl = prometheusUrl;
 
 
+    }
+
+    public Long getPrometheusHostId(){
+        return prometheusHostId;
     }
 
     public String getName(){
@@ -76,6 +93,32 @@ public class Device{
     public LocalDateTime getSavedAt(){
         return savedAt;
     }
+
+    public boolean getIsPrometheusHost(){
+        return isPrometheusHost;
+    }
+
+    public boolean getIsFunctionHost(){
+        return isFunctionHost;
+    }
+
+    public List<Function> getFunctions(){
+        return functions;
+    }
+
+
+    public void setPrometheusHostId(Long newPrometheusHostId){
+        this.prometheusHostId = newPrometheusHostId;
+    }
+
+    public void setIsPrometheusHost(boolean newIsPrometheusHost){
+        this.isPrometheusHost = newIsPrometheusHost;
+    }
+
+    public void setIsFunctionHost(boolean newIsFunctionHost){
+        this.isFunctionHost = newIsFunctionHost;
+    }
+
 
     public void setName(String newName){
         this.name = newName;

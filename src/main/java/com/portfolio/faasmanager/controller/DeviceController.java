@@ -78,14 +78,25 @@ public class DeviceController {
         if (id == null) 
             throw new AttributeException("O Id do dispositivo deve ser informado");
         
+        if (deviceDetails.getIpAddress() != null && !deviceDetails.getIpAddress().trim().isEmpty()) {
+            String ipv4Regex = "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$";
+            if (!deviceDetails.getIpAddress().matches(ipv4Regex)) {
+                throw new AttributeException("O endereço IP fornecido é inválido. Envie um IPv4 válido.");
+            }
+        }
         
         return repository.findById(id)
             .map(device -> {
                 device.setName(deviceDetails.getName());
+                device.setIpAddress(deviceDetails.getIpAddress());
                 device.setPrometheusUrl(deviceDetails.getPrometheusUrl());
+                device.setPrometheusHostId(deviceDetails.getPrometheusHostId());
+                device.setIsPrometheusHost(deviceDetails.getIsPrometheusHost());
+                device.setIsFunctionHost(deviceDetails.getIsFunctionHost());
+                
                 Device updated = repository.save(device);
                 return ResponseEntity.ok(updated);
-            }).orElseThrow(() -> new ResourceEditException("Erro ao editar o dispoositivo: " + id));
+            }).orElseThrow(() -> new ResourceEditException("Erro ao editar o dispositivo: " + id));
     }
 
     @DeleteMapping("/{id}")
@@ -133,7 +144,7 @@ public class DeviceController {
         try {
             return repository.save(device);
         } catch (DataIntegrityViolationException e) {
-            throw new ResourceCreationException("Já existe um dispositivo cadastrado com este nome ou URL do Prometheus.");
+            throw new ResourceCreationException("Erro nos dados do cadastro: verifique se algum campo obrigatório ficou vazio ou se já existe um dispositivo com o nome escolhido.");
         } catch (Exception e) {
             throw new ResourceCreationException("Erro ao criar dispositivo: " + e.getMessage());
         }
@@ -209,6 +220,66 @@ public class DeviceController {
                 Device updated = repository.save(device);
                 return ResponseEntity.ok(updated);
             }).orElseThrow(() -> new ResourceEditException("Erro ao editar o IP do dispositivo com o id: " + id));
+    }
+
+    @PutMapping("/{id}/update-prometheus-host")
+    public ResponseEntity<Device> updatePrometheusHost(
+            @PathVariable Long id, 
+            @RequestParam(required = false) Long prometheusHostId) {
+        
+        return repository.findById(id)
+            .map(device -> {
+                device.setPrometheusHostId(prometheusHostId);
+                Device updated = repository.save(device);
+                return ResponseEntity.ok(updated);
+            }).orElseThrow(() -> new ResourceEditException("Erro ao editar o host Prometheus do dispositivo: " + id));
+    }
+
+
+    @PutMapping("/{id}/update-is-prometheus-host")
+    public ResponseEntity<Device> updateIsPrometheusHost(@PathVariable Long id, @RequestParam Boolean isPrometheusHost) {
+        if (isPrometheusHost == null) {
+            throw new AttributeException("O status de host do Prometheus deve ser informado (true ou false)");
+        }
+        
+        return repository.findById(id)
+            .map(device -> {
+                device.setIsPrometheusHost(isPrometheusHost); // Utiliza o setter do Device.java
+                Device updated = repository.save(device);
+                return ResponseEntity.ok(updated);
+            }).orElseThrow(() -> new ResourceEditException("Erro ao editar o status de Prometheus Host do dispositivo com id: " + id));
+    }
+
+    @PutMapping("/{id}/update-is-function-host")
+    public ResponseEntity<Device> updateIsFunctionHost(@PathVariable Long id, @RequestParam Boolean isFunctionHost) {
+        if (isFunctionHost == null) {
+            throw new AttributeException("O status de host de Função deve ser informado (true ou false)");
+        }
+        
+        return repository.findById(id)
+            .map(device -> {
+                device.setIsFunctionHost(isFunctionHost); // Utiliza o setter do Device.java
+                Device updated = repository.save(device);
+                return ResponseEntity.ok(updated);
+            }).orElseThrow(() -> new ResourceEditException("Erro ao editar o status de Function Host do dispositivo com id: " + id));
+    }
+
+    @GetMapping("/{id}/is-prometheus-host")
+    public ResponseEntity<Boolean> getIsPrometheusHost(@PathVariable Long id) {
+        if (id == null) throw new AttributeException("O Id do dispositivo deve ser informado");
+        
+        return repository.findById(id)
+            .map(device -> ResponseEntity.ok(device.getIsPrometheusHost())) // Utiliza o getter do Device.java
+            .orElseThrow(() -> new ResourceNotFoundException("Dispositivo não encontrado"));
+    }
+
+    @GetMapping("/{id}/is-function-host")
+    public ResponseEntity<Boolean> getIsFunctionHost(@PathVariable Long id) {
+        if (id == null) throw new AttributeException("O Id do dispositivo deve ser informado");
+        
+        return repository.findById(id)
+            .map(device -> ResponseEntity.ok(device.getIsFunctionHost())) // Utiliza o getter do Device.java
+            .orElseThrow(() -> new ResourceNotFoundException("Dispositivo não encontrado"));
     }
 
     
