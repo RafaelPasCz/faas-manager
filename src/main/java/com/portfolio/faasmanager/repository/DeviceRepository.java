@@ -6,13 +6,14 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-@Repository                                           //classe, tipo da PK
+@Repository                                           
 public interface DeviceRepository extends JpaRepository<Device, Long> {
-    
-    List<Device> findByName(String name);
+   
+    Optional<Device> findByName(String name);
 
     Optional<Device> findByPrometheusUrl(String prometheusUrl);
 
-    
+    List<Device> findByIsFunctionHostTrue();
 
+    List<Device> findByIsPrometheusHostTrue();
 }

@@ -26,6 +26,7 @@ import com.portfolio.faasmanager.exception.ResourceNotFoundException;
 import com.portfolio.faasmanager.model.Device;
 import com.portfolio.faasmanager.repository.DeviceRepository;
 import com.portfolio.faasmanager.service.PrometheusService;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/devices")
@@ -72,11 +73,8 @@ public class DeviceController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Device> updateDevice(@PathVariable Long id, @RequestBody Device deviceDetails) {
-        if (deviceDetails.getName() == null) 
-            throw new AttributeException("O nome não deve ser nulo");
-        
-        if (id == null) 
-            throw new AttributeException("O Id do dispositivo deve ser informado");
+        if (deviceDetails.getName() == null) throw new AttributeException("O nome não deve ser nulo");
+        if (id == null) throw new AttributeException("O Id do dispositivo deve ser informado");
         
         if (deviceDetails.getIpAddress() != null && !deviceDetails.getIpAddress().trim().isEmpty()) {
             String ipv4Regex = "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$";
@@ -94,10 +92,25 @@ public class DeviceController {
             device.setIsPrometheusHost(deviceDetails.getIsPrometheusHost());
             device.setIsFunctionHost(deviceDetails.getIsFunctionHost());
             device.setNodeExporterUrl(deviceDetails.getNodeExporterUrl());
+            device.setGatewayPort(deviceDetails.getGatewayPort());
             
             Device updated = repository.save(device);
             return ResponseEntity.ok(updated);
         }).orElseThrow(() -> new ResourceEditException("Erro ao editar o dispositivo: " + id));
+    }
+
+    @PutMapping("/{id}/update-gateway-port")
+    public ResponseEntity<Device> updateGatewayPort(@PathVariable Long id, @RequestParam Integer gatewayPort) {
+        if (gatewayPort == null) {
+            throw new AttributeException("A porta do Gateway deve ser informada");
+        }
+
+        return repository.findById(id)
+            .map(device -> {
+                device.setGatewayPort(gatewayPort);
+                Device updated = repository.save(device);
+                return ResponseEntity.ok(updated);
+            }).orElseThrow(() -> new ResourceEditException("Erro ao editar a porta de gateway do dispositivo com id: " + id));
     }
 
     @DeleteMapping("/{id}")
@@ -176,7 +189,7 @@ public class DeviceController {
     }
 
     @GetMapping("/find-by-name")
-    public List<Device> findByName(@RequestParam String name){
+    public Optional<Device> findByName(@RequestParam String name){
         return repository.findByName(name);
     }
 
