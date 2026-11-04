@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "tb_device")
@@ -39,7 +40,7 @@ public class Device {
     @Column(name = "is_function_host", nullable = false)
     private boolean isFunctionHost = false;
 
-
+    @JsonIgnore
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FunctionInstance> functionInstances;
 
