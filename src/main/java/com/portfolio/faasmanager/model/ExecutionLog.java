@@ -1,27 +1,15 @@
-/* Arquivo para guardar os dados de cada execução no banco de dados */
-
 package com.portfolio.faasmanager.model;
-import java.time.LocalDateTime;
 
+import java.time.LocalDateTime;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "tb_execution_log")
 @EntityListeners(AuditingEntityListener.class)
-
-
 public class ExecutionLog {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,8 +18,7 @@ public class ExecutionLog {
     @Column(name = "saved_at", nullable = false, updatable = false)
     private LocalDateTime savedAt; 
 
-
-    @Column(name = "executed_at", nullable = false, updatable = false) // updatable = false impede que alguém altere a data do log depois
+    @Column(name = "executed_at", nullable = false, updatable = false)
     private LocalDateTime executedAt;
 
     @Column(name = "status_code", updatable = false)
@@ -43,52 +30,28 @@ public class ExecutionLog {
     @Column(nullable = false, updatable = false)
     private Boolean success;
 
-    //chave estrangeira para function
-    //uma função pode ter várias logs de execução
-    //cada log tem apenas uma função
-    //o objeto function ja tem um device_id como FK, então ja temos essa info
     @ManyToOne
-    @JoinColumn(name = "function_id", nullable = false, updatable = false)
-    private Function function;
+    @JoinColumn(name = "function_instance_id", nullable = false, updatable = false)
+    private FunctionInstance functionInstance;
 
-    public ExecutionLog(){
+    public ExecutionLog() {}
 
-    }
-
-    public ExecutionLog(Long requestDurationMs, boolean success, Function function){
+    public ExecutionLog(Long requestDurationMs, boolean success, FunctionInstance functionInstance) {
         this.requestDurationMs = requestDurationMs;
         this.success = success;
-        this.function = function;
+        this.functionInstance = functionInstance;
     }
 
 
+    public Long getId() { return id; }
+    public LocalDateTime getSavedAt() { return savedAt; }
+    public LocalDateTime getExecutedAt() { return executedAt; }
+    public Integer getStatusCode() { return statusCode; }
+    public Long getRequestDurationMs() { return requestDurationMs; }
+    public boolean isSuccess() { return success; }
+    public FunctionInstance getFunctionInstance() { return functionInstance; }
 
-    public Long getRequestDurationMs(){
-        return requestDurationMs;
-    }
 
-    public boolean isSuccess(){
-        return success;
-    }
-
-    public Function getFunction(){
-        return function;
-    }
-
-    public LocalDateTime getExecutedAt(){
-        return executedAt;
-    }
-
-    public Long getId(){
-        return id;
-    }
-
-    public LocalDateTime getSavedAt(){
-        return savedAt;
-    }
-
-    public Integer getStatusCode() {
-        return statusCode;
-    }
-
+    public void setStatusCode(Integer statusCode) { this.statusCode = statusCode; }
+    public void setExecutedAt(LocalDateTime executedAt) { this.executedAt = executedAt; }
 }
