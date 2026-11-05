@@ -1,55 +1,77 @@
 package com.portfolio.faasmanager.service;
 
-
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.RestClientException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
+import com.portfolio.faasmanager.exception.AttributeException;
+import com.portfolio.faasmanager.exception.ResourceNotFoundException;
 import com.portfolio.faasmanager.model.Device;
 import com.portfolio.faasmanager.repository.DeviceRepository;
-import com.portfolio.faasmanager.exception.ResourceNotFoundException;
-import com.portfolio.faasmanager.exception.GeneralException;
 
 @Service
 public class PrometheusService {
+
     private final DeviceRepository deviceRepository;
     private final RestTemplate restTemplate;
+    
+ 
 
-    public PrometheusService(DeviceRepository deviceRepository){
+ 
+    public PrometheusService(DeviceRepository deviceRepository, RestTemplate restTemplate) {
         this.deviceRepository = deviceRepository;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
     }
 
-    public JsonNode getMetricFromDevice(Long deviceId, String type){
-        Device device = deviceRepository.findById(deviceId)
-        .orElseThrow(() -> new ResourceNotFoundException("Dispositivo com id " + deviceId + " Não encontrado" ));
+    public String getMetricFromDevice(Long deviceId, String type) {
+            
+        Device targetDevice = deviceRepository.findById(deviceId)
+            .orElseThrow(() -> new ResourceNotFoundException("Dispositivo não encontrado."));
 
-        if(device.getPrometheusUrl() == null || device.getPrometheusUrl().strip().isEmpty()){
-            throw new GeneralException("Url do prometheus para o dispositivo com id " + deviceId + " não encontrado");
-        }
-
-        String prometheusApiUrl = device.getPrometheusUrl() + "/api/v1/query?query=";
-
-        String promQlQuery = "";
-        if (type.equals("cpu")) {
-            promQlQuery = "(1 - avg by (instance) (rate(node_cpu_seconds_total {mode=\"idle\"}[15s]))) ";
-
-        } else if (type.equals("ram")) {
-            promQlQuery = "((avg_over_time(node_memory_MemTotal_bytes[15s]) - avg_over_time(node_memory_MemAvailable_bytes[15s]))" + 
-            "/ avg_over_time(node_memory_MemTotal_bytes[15s])) * 100"; 
-
-        } else {
-            throw new GeneralException("Tipo de métrica não suportado: " + type);
-        }
+        String prometheusUrl = resolvePrometheusUrl(targetDevice);
+        String instanceFilter = targetDevice.getIpAddress() + ":9100";
+        String promQlQuery = buildPromQlQuery(type, instanceFilter);
 
         try {
-            String fullUrl = prometheusApiUrl + promQlQuery;
-            return restTemplate.getForObject(fullUrl, JsonNode.class);
-        } catch (RestClientException e) {
-            throw new GeneralException("Erro ao se comunicar com o Prometheus do dispositivo: " + e.getMessage());
+            String requestUrl = prometheusUrl + "/api/v1/query?query={query}";
+            
+            return restTemplate.getForObject(requestUrl, String.class, promQlQuery);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao consultar o Prometheus: " + e.getMessage());
         }
     }
 
- }
+    private String resolvePrometheusUrl(Device device) {
+        if (device.getIsPrometheusHost()) {
+            if (device.getPrometheusUrl() == null || device.getPrometheusUrl().isBlank()) {
+                throw new AttributeException("O dispositivo está marcado como host Prometheus, mas a URL está vazia.");
+            }
+            return device.getPrometheusUrl();
+        } 
+        
+        if (device.getPrometheusHostId() != null) {
+            Device prometheusHost = deviceRepository.findById(device.getPrometheusHostId())
+                .orElseThrow(() -> new ResourceNotFoundException("Host Prometheus associado não encontrado."));
+            return prometheusHost.getPrometheusUrl();
+        }
+
+        throw new AttributeException("O dispositivo não possui um host Prometheus associado para coletar métricas.");
+    }
+
+    private String buildPromQlQuery(String type, String instance) {
+        switch (type.toLowerCase()) {
+            case "cpu":
+                return String.format(
+                    "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode='idle', instance='%s'}[1m])) * 100)", 
+                    instance
+                );
+            case "ram":
+                return String.format(
+                    "100 * (1 - (node_memory_MemAvailable_bytes{instance='%s'} / node_memory_MemTotal_bytes{instance='%s'}))",
+                    instance, instance
+                );
+            default:
+                throw new AttributeException("Tipo de métrica não suportado. Use 'cpu' ou 'ram'.");
+        }
+    }
+}

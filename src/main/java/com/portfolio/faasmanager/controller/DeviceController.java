@@ -1,6 +1,6 @@
 package com.portfolio.faasmanager.controller;
 
-import java.util.List;
+import java.util.Optional;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.portfolio.faasmanager.exception.AttributeException;
 import com.portfolio.faasmanager.exception.ResourceCreationException;
 import com.portfolio.faasmanager.exception.ResourceDeleteException;
@@ -26,7 +25,6 @@ import com.portfolio.faasmanager.exception.ResourceNotFoundException;
 import com.portfolio.faasmanager.model.Device;
 import com.portfolio.faasmanager.repository.DeviceRepository;
 import com.portfolio.faasmanager.service.PrometheusService;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/devices")
@@ -164,18 +162,14 @@ public class DeviceController {
         }
     }
 
-    @GetMapping("/{id}/metrics")
-    public ResponseEntity<JsonNode> getDeviceMetrics(
+    @GetMapping(value = "/{id}/metrics", produces = "application/json")
+    public ResponseEntity<String> getDeviceMetrics(
             @PathVariable Long id, 
             @RequestParam String type) {
         
-        JsonNode metrics = prometheusService.getMetricFromDevice(id, type);
+       
+        String metrics = prometheusService.getMetricFromDevice(id, type);
         return ResponseEntity.ok(metrics);
-    }
-
-    @GetMapping("/find-all")
-    public List<Device> findAll(){
-        return repository.findAll();
     }
 
     @GetMapping("/{id}")
