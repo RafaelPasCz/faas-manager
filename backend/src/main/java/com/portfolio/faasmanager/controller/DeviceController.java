@@ -1,6 +1,7 @@
 package com.portfolio.faasmanager.controller;
 
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -207,6 +208,12 @@ public class DeviceController {
         return repository.findById(id)
             .map(ResponseEntity::ok)
             .orElseThrow(() -> new ResourceNotFoundException("Dispositivo não encontrado"));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Device>> getAllDevices() {
+        List<Device> devices = repository.findAll();
+        return ResponseEntity.ok(devices);
     }
     
     @PutMapping("/{id}/update-ip")
