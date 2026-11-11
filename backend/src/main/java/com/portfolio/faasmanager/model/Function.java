@@ -14,6 +14,9 @@ public class Function {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private Boolean active = true; 
+
     @Column(nullable = false, length = 100, unique = true)
     private String name;
 
@@ -34,8 +37,10 @@ public class Function {
     public String getDockerImage() { return dockerImage; }
     public String getRuntime() { return runtime; }
     public LocalDateTime getSavedAt() { return savedAt; }
+    public Boolean getActive() { return active; }
 
     public void setName(String name) { this.name = name; }
     public void setDockerImage(String dockerImage) { this.dockerImage = dockerImage; }
     public void setRuntime(String runtime) { this.runtime = runtime; }
+    public void setActive(Boolean active) { this.active = active; }
 }

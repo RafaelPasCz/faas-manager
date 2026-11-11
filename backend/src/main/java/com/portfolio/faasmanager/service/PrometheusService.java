@@ -2,7 +2,10 @@ package com.portfolio.faasmanager.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.portfolio.faasmanager.dto.DeviceMetricsDTO; // Certifique-se de importar o DTO que criamos
 import com.portfolio.faasmanager.exception.AttributeException;
 import com.portfolio.faasmanager.exception.ResourceNotFoundException;
 import com.portfolio.faasmanager.model.Device;
@@ -13,32 +16,59 @@ public class PrometheusService {
 
     private final DeviceRepository deviceRepository;
     private final RestTemplate restTemplate;
-    
- 
-
+    private final ObjectMapper objectMapper; 
  
     public PrometheusService(DeviceRepository deviceRepository, RestTemplate restTemplate) {
         this.deviceRepository = deviceRepository;
         this.restTemplate = restTemplate;
+        this.objectMapper = new ObjectMapper();
     }
 
-    public String getMetricFromDevice(Long deviceId, String type) {
+    public DeviceMetricsDTO getMetrics(Long deviceId) {
             
         Device targetDevice = deviceRepository.findById(deviceId)
             .orElseThrow(() -> new ResourceNotFoundException("Dispositivo não encontrado."));
 
         String prometheusUrl = resolvePrometheusUrl(targetDevice);
         String instanceFilter = targetDevice.getIpAddress() + ":9100";
-        String promQlQuery = buildPromQlQuery(type, instanceFilter);
 
+        String cpuQuery = buildPromQlQuery("cpu", instanceFilter);
+        String ramQuery = buildPromQlQuery("ram", instanceFilter);
+
+        Double cpuValue = fetchAndParseMetric(prometheusUrl, cpuQuery);
+        Double ramValue = fetchAndParseMetric(prometheusUrl, ramQuery);
+
+        return new DeviceMetricsDTO(cpuValue, ramValue);
+    }
+
+    private Double fetchAndParseMetric(String prometheusUrl, String promQlQuery) {
         try {
             String requestUrl = prometheusUrl + "/api/v1/query?query={query}";
+            String jsonResponse = restTemplate.getForObject(requestUrl, String.class, promQlQuery);
             
-            return restTemplate.getForObject(requestUrl, String.class, promQlQuery);
+            return extractValueFromJson(jsonResponse);
             
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao consultar o Prometheus: " + e.getMessage());
+            System.err.println("Erro ao consultar o Prometheus: " + e.getMessage());
+            return 0.0; 
         }
+    }
+
+    private Double extractValueFromJson(String json) {
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode resultNode = root.path("data").path("result");
+            
+            if (resultNode.isArray() && resultNode.size() > 0) {
+                JsonNode valueNode = resultNode.get(0).path("value");
+                if (valueNode.isArray() && valueNode.size() > 1) {
+                    return valueNode.get(1).asDouble();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao processar JSON: " + e.getMessage());
+        }
+        return 0.0;
     }
 
     private String resolvePrometheusUrl(Device device) {
@@ -71,7 +101,7 @@ public class PrometheusService {
                     instance, instance
                 );
             default:
-                throw new AttributeException("Tipo de métrica não suportado. Use 'cpu' ou 'ram'.");
+                throw new AttributeException("Tipo de métrica não suportado.");
         }
     }
 }

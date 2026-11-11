@@ -16,4 +16,8 @@ public interface DeviceRepository extends JpaRepository<Device, Long> {
     List<Device> findByIsFunctionHostTrue();
 
     List<Device> findByIsPrometheusHostTrue();
+
+    List<Device> findAllByActiveTrue();
+    
+    Optional<Device> findByIdAndActiveTrue(Long id);
 }

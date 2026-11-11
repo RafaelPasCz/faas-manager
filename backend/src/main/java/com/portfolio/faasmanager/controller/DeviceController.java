@@ -18,14 +18,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.portfolio.faasmanager.dto.DeviceMetricsDTO;
+
 import com.portfolio.faasmanager.exception.AttributeException;
 import com.portfolio.faasmanager.exception.ResourceCreationException;
 import com.portfolio.faasmanager.exception.ResourceDeleteException;
 import com.portfolio.faasmanager.exception.ResourceEditException;
 import com.portfolio.faasmanager.exception.ResourceNotFoundException;
+
 import com.portfolio.faasmanager.model.Device;
+import com.portfolio.faasmanager.model.FunctionInstance;
+
+
 import com.portfolio.faasmanager.repository.DeviceRepository;
+import com.portfolio.faasmanager.repository.FunctionInstanceRepository;
+
 import com.portfolio.faasmanager.service.PrometheusService;
+
+
 
 @RestController
 @RequestMapping("/api/devices")
@@ -33,10 +43,14 @@ import com.portfolio.faasmanager.service.PrometheusService;
 public class DeviceController {
     private final DeviceRepository repository;
     private final PrometheusService prometheusService;
+    private final FunctionInstanceRepository instanceRepository;
 
-    public DeviceController(DeviceRepository repository, PrometheusService prometheusService){
+    public DeviceController(DeviceRepository repository, 
+        PrometheusService prometheusService, 
+        FunctionInstanceRepository instanceRepository) {
         this.repository = repository;
         this.prometheusService = prometheusService;
+        this.instanceRepository = instanceRepository;
     }
 
     @PutMapping("/{id}/update-name")
@@ -119,7 +133,18 @@ public class DeviceController {
         
         return repository.findById(id)
             .map(device -> {
-                repository.delete(device); 
+            
+                device.setActive(false);
+                repository.save(device); 
+                
+             
+                List<FunctionInstance> hostedInstances = instanceRepository.findByDeviceId(device.getId());
+                
+                if (!hostedInstances.isEmpty()) {
+                    hostedInstances.forEach(instance -> instance.setActive(false));
+                    instanceRepository.saveAll(hostedInstances); 
+                }
+                
                 return ResponseEntity.noContent().<Void>build();
             })
             .orElseThrow(() -> new ResourceDeleteException("Erro ao deletar o dispositivo: " + id));
@@ -163,16 +188,13 @@ public class DeviceController {
         }
     }
 
-    @GetMapping(value = "/{id}/metrics", produces = "application/json")
-    public ResponseEntity<String> getDeviceMetrics(
-            @PathVariable Long id, 
-            @RequestParam String type) {
-        
-       
-        String metrics = prometheusService.getMetricFromDevice(id, type);
+    @GetMapping("/{id}/metrics")
+    public ResponseEntity<DeviceMetricsDTO> getDeviceMetrics(@PathVariable Long id) {
+        // Chama o serviço unificado que acabámos de criar
+        DeviceMetricsDTO metrics = prometheusService.getMetrics(id);
         return ResponseEntity.ok(metrics);
     }
-
+    
     @GetMapping("/{id}")
     public ResponseEntity<Device> findById(@PathVariable Long id){
         if (id == null) {
@@ -212,7 +234,7 @@ public class DeviceController {
 
     @GetMapping
     public ResponseEntity<List<Device>> getAllDevices() {
-        List<Device> devices = repository.findAll();
+        List<Device> devices = repository.findAllByActiveTrue();
         return ResponseEntity.ok(devices);
     }
     

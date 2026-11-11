@@ -81,12 +81,26 @@ public class FunctionInstanceController {
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> tearDown(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteFunctionInstance(@PathVariable Long id) {
+        if (id == null) throw new AttributeException("O id não deve ser nulo");
+        
         return instanceRepository.findById(id)
             .map(instance -> {
-                // TODO: Chamada para o faas-agent dar docker rm
-                instanceRepository.delete(instance);
+                instance.setActive(false);
+                instanceRepository.save(instance); 
+                
                 return ResponseEntity.noContent().<Void>build();
-            }).orElseThrow(() -> new ResourceNotFoundException("Instância não encontrada."));
+            })
+            .orElseThrow(() -> new ResourceDeleteException("Erro ao deletar a instância: " + id));
+    }
+
+    @GetMapping("/device/{deviceId}")
+    public ResponseEntity<List<FunctionInstance>> findByDeviceId(@PathVariable Long deviceId) {
+        if (deviceId == null) {
+            throw new AttributeException("O Id do dispositivo deve ser informado");
+        }
+        
+        List<FunctionInstance> instances = instanceRepository.findByDeviceId(deviceId);
+        return ResponseEntity.ok(instances);
     }
 }

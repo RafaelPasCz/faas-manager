@@ -67,11 +67,21 @@ public class FunctionController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFunction(@PathVariable Long id) {
-        if (functionRepository.existsById(id)) {
-            functionRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        if (id == null) throw new AttributeException("O id não deve ser nulo");
+        
+        return functionRepository.findById(id)
+            .map(function -> {
+              
+                function.setActive(false);
+                
+                // Inativa todas as instâncias filhas dessa função
+                // Deixar opcional mais para a frente
+                // function.getInstances().forEach(instance -> instance.setActive(false));
+                
+                functionRepository.save(function); 
+                return ResponseEntity.noContent().<Void>build();
+            })
+            .orElseThrow(() -> new ResourceDeleteException("Erro ao deletar a função: " + id));
     }
 
     @GetMapping("/{id}")

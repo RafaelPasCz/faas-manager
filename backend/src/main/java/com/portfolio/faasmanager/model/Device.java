@@ -15,6 +15,9 @@ public class Device {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private Boolean active = true; 
+
     @Column(nullable = false, length = 100, unique = true)
     private String name;
 
@@ -24,7 +27,7 @@ public class Device {
     @Column(name = "is_prometheus_host", nullable = false)
     private boolean isPrometheusHost = false;
 
-    @Column(name = "prometheus_url", length = 300, unique = true)
+    @Column(name = "prometheus_url", length = 300)
     private String prometheusUrl;
 
     @Column(name = "prometheus_host_id")
@@ -66,6 +69,7 @@ public class Device {
     public boolean getIsFunctionHost() { return isFunctionHost; }
     public List<FunctionInstance> getFunctionInstances() { return functionInstances; }
     public String getNodeExporterUrl() { return nodeExporterUrl; }
+    public Boolean getActive() { return active; }
 
 
     public void setName(String name) { this.name = name; }
@@ -76,4 +80,5 @@ public class Device {
     public void setGatewayPort(Integer gatewayPort) { this.gatewayPort = gatewayPort; }
     public void setIsFunctionHost(boolean isFunctionHost) { this.isFunctionHost = isFunctionHost; }
     public void setNodeExporterUrl(String nodeExporterUrl) { this.nodeExporterUrl = nodeExporterUrl; }
+    public void setActive(Boolean active) { this.active = active; }
 }
