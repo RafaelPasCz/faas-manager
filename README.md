@@ -1,18 +1,45 @@
-# FaaS Manager API
+# FaaS Manager
 
-API RESTful desenvolvida para orquestração, monitoramento e gerenciamento de infraestrutura FaaS (Function as a Service) em ambientes distribuídos (Edge e Fog Computing). O sistema gerencia o ciclo de vida de dispositivos (nós de processamento), funções serverless e centraliza a telemetria através de logs de execução imutáveis e integração com Prometheus.
+O FaaS Manager é um plano de controle (Control Plane) desenvolvido para orquestração, implantação e monitoramento de infraestrutura Function as a Service (FaaS) em ambientes distribuídos, com foco em Edge e Fog Computing. 
 
-## Tecnologias Utilizadas
-* **Java 17+**
-* **Spring Boot 3** (Web, Data JPA)
-* **PostgreSQL**
-* **Hibernate** (Auditoria de dados via `AuditingEntityListener`)
-* **Maven**
+Este repositório representa a primeira fase de um projeto arquitetural maior integrado ao **Switchfaas**, com o objetivo de estabelecer uma camada de execução adaptativa ao longo do continuum de computação.
 
-## Pré-requisitos
-* [JDK 17](https://jdk.java.net/17/) ou superior instalado.
-* [PostgreSQL](https://www.postgresql.org/download/) rodando localmente (nativamente ou via Docker).
-* [Maven](https://maven.apache.org/) instalado (ou utilize o wrapper `mvnw` incluso no projeto).
+## Arquitetura do Sistema
+
+O projeto adota uma arquitetura cliente-servidor, separando as responsabilidades de gerenciamento de estado (Back-end) e interface de operação (Front-end).
+
+### Back-end (API RESTful)
+Desenvolvido em Java 17 com Spring Boot 3 e PostgreSQL, o back-end atua como a fonte de verdade do estado do cluster. Ele é dividido nos seguintes módulos principais:
+
+* **Gerenciamento de Dispositivos (Devices):** Responsável por cadastrar e manter o estado dos nós físicos de hardware na borda. O sistema diferencia a topologia dos nós, identificando quais são hospedeiros de funções (Function Hosts) e quais atuam como concentradores de métricas (Prometheus Hosts), além de gerenciar endereçamentos IP.
+* **Catálogo de Funções (Functions):** Mantém a abstração das funções serverless disponíveis para o sistema. Este módulo armazena metadados de execução, como a imagem Docker correspondente e o ambiente de execução (runtime), desvinculados da infraestrutura física.
+* **Instâncias de Função (Function Instances):** Gerencia o ciclo de vida dos *deployments*. Este componente é responsável por fazer o vínculo (binding) entre uma Função Abstrata e um Dispositivo Físico, controlando os status transicionais (ex: DEPLOYING, IDLE, EXECUTING).
+* **Observabilidade (Execution Logs):** Módulo de ingestão de telemetria focado em auditoria. Registra dados vitais de cada requisição (duração em milissegundos, status code HTTP e data exata). Os logs são estritamente imutáveis (append-only), garantidos pelo uso de `AuditingEntityListener` do Hibernate, impossibilitando a alteração do histórico de execuções.
+
+### Front-end (Dashboard de Controle)
+A interface de usuário foi construída com React e a biblioteca de componentes Tremor, operando como uma Single Page Application (SPA) focada na consistência visual e na rápida tomada de decisão. O funcionamento baseia-se em três pilares:
+
+* **Visão de Dispositivos:** Uma interface baseada em cards expansíveis que exibe a infraestrutura física. Ao interagir com um nó, o operador visualiza métricas de hardware, a tabela de instâncias de funções provisionadas naquele recurso e um *feed* em tempo real com as últimas execuções processadas por aquele dispositivo. A partir desta tela, é possível invocar modais para provisionamento imediato de novas instâncias.
+* **Gestão do Catálogo:** Uma aba dedicada à listagem e pesquisa das funções abstratas, permitindo a adição e remoção de definições de software que poderão ser implantadas na topologia.
+* **Auditoria de Logs:** Uma interface de observabilidade avançada que centraliza o histórico global de execuções. O front-end aplica filtros combinados reativos (por nomenclatura, janelas de tempo, códigos HTTP e resultados binários) cruzando os dados em memória para garantir respostas imediatas na interface.
+
+---
+
+## Stack Tecnológico
+
+**Back-end:**
+* Java 17+
+* Spring Boot 3 (Web, Data JPA)
+* PostgreSQL
+* Hibernate 
+* Maven
+
+**Front-end:**
+* React
+* Tremor (Componentes de UI e visualização de dados)
+* Tailwind CSS
+
+---
 
 ## Como executar localmente
 
@@ -30,7 +57,7 @@ CREATE USER faas_admin WITH ENCRYPTED PASSWORD '1234';
 GRANT ALL PRIVILEGES ON DATABASE faas_manager TO faas_admin;
 ```
 
-### 2. Configurações de Ambiente (`application.properties`)
+### 2. Configurações de Ambiente
 Certifique-se de que o arquivo `src/main/resources/application.properties` está configurado corretamente com a string de conexão e o controle de migração do Hibernate. O arquivo deve conter:
 
 ```properties
@@ -41,7 +68,6 @@ spring.datasource.password=1234
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # Configurações do JPA / Hibernate
-# "update" criará/atualizará as tabelas automaticamente sem apagar os dados existentes
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
@@ -50,24 +76,18 @@ spring.jpa.properties.hibernate.format_sql=true
 server.port=8080
 ```
 
-### 3. Rodando o Projeto
+### 3. Execução do Servidor
 Abra o terminal na pasta raiz do projeto (onde está o arquivo `pom.xml`) e execute o comando abaixo para compilar e iniciar a aplicação:
 
 ```bash
-# Se tiver o Maven instalado globalmente:
+# Utilizando Maven instalado globalmente:
 mvn spring-boot:run
 
-# Se for utilizar o Maven Wrapper do projeto:
-./mvnw spring-boot:run     # (Linux/macOS)
-mvnw.cmd spring-boot:run   # (Windows)
+# Utilizando Maven Wrapper (Linux/macOS):
+./mvnw spring-boot:run
+
+# Utilizando Maven Wrapper (Windows):
+mvnw.cmd spring-boot:run
 ```
 
-O servidor iniciará localmente e a API estará disponível no endereço: `http://localhost:8080/api/`
-
----
-
-## Estrutura de Endpoints (Visão Geral)
-
-* **`/api/devices`**: Cadastro e edição de hardware de borda (incluindo validação de IPv4 e URL do Prometheus).
-* **`/api/functions`**: Gerenciamento das funções serverless disponíveis no cluster.
-* **`/api/execution-logs`**: Ingestão de telemetria. Logs possuem datas de registro automáticas (`savedAt`) e são estritamente imutáveis (append-only) para garantir a integridade da auditoria de falhas e timeouts.
+A API estará disponível no endereço: `http://localhost:8080/api/`
