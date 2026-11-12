@@ -2,12 +2,17 @@ import { useState } from 'react';
 import FunctionTable from './FunctionTable';
 import { Card, Text, Metric, Badge, Button, Grid } from '@tremor/react';
 import DeviceMetrics from './DeviceMetrics';
+import DeployFunctionModal from './DeployFunctionModal';
+import DeviceRecentLogs from './DeviceRecentLogs';
 
 export default function DeviceCard({ device, allDevices, onDeviceDeleted }) {
   const pinKey = `faas_pinned_${device.id}`;
   const [isPinned, setIsPinned] = useState(() => localStorage.getItem(pinKey) === 'true');
   const [isExpanded, setIsExpanded] = useState(isPinned);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeployModalOpen, setIsDeployModalOpen] = useState(false); 
+  const [refreshTrigger, setRefreshTrigger] = useState(0); 
+  
 
   const togglePin = (e) => {
     e.stopPropagation(); 
@@ -17,7 +22,7 @@ export default function DeviceCard({ device, allDevices, onDeviceDeleted }) {
   };
 
   const handleDelete = async (e) => {
-    e.stopPropagation(); // Prevents the card from expanding when clicking the delete button
+    e.stopPropagation(); 
     
     const confirmDelete = window.confirm(`Tem certeza que deseja excluir o dispositivo "${device.name}"?`);
     if (!confirmDelete) return;
@@ -30,7 +35,6 @@ export default function DeviceCard({ device, allDevices, onDeviceDeleted }) {
       });
 
       if (response.ok) {
-        // Calls the parent component function to refresh the device list
         if (onDeviceDeleted) {
           onDeviceDeleted();
         }
@@ -63,7 +67,6 @@ export default function DeviceCard({ device, allDevices, onDeviceDeleted }) {
           </div>
           
           <div className="flex gap-2">
-            {/* Delete Button */}
             <button 
               onClick={handleDelete}
               disabled={isDeleting}
@@ -75,7 +78,6 @@ export default function DeviceCard({ device, allDevices, onDeviceDeleted }) {
               </svg>
             </button>
 
-            {/* Pin Button */}
             <button 
               onClick={togglePin}
               className={`p-2 rounded-full transition-colors ${isPinned ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-50 text-gray-400 hover:text-emerald-600 dark:bg-zinc-900 dark:text-zinc-500 dark:hover:text-emerald-400'}`}
@@ -123,13 +125,35 @@ export default function DeviceCard({ device, allDevices, onDeviceDeleted }) {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <Metric className="text-lg dark:text-white">Instâncias em Execução</Metric>
+                  <Button 
+                    size="xs" 
+                    variant="light" 
+                    color="emerald"
+                    onClick={(e) => {
+                      e.stopPropagation(); 
+                      setIsDeployModalOpen(true);
+                    }}
+                  >
+                    + Fazer Deploy
+                  </Button>
                 </div>
                 
-                <FunctionTable deviceId={device.id} />
+                <FunctionTable deviceId={device.id} refreshTrigger={refreshTrigger} />
                 
+                <DeployFunctionModal 
+                  isOpen={isDeployModalOpen}
+                  onClose={() => setIsDeployModalOpen(false)}
+                  deviceId={device.id}
+                  onDeploySuccess={() => {
+                    setRefreshTrigger(prev => prev + 1);
+                  }}
+                />
+
+                <DeviceRecentLogs deviceId={device.id} />
+
               </div>
             )}
-          </div>
+          </div> 
         )}
       </Card>
     </div>
