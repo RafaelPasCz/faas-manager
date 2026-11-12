@@ -68,4 +68,9 @@ public class ExecutionLogController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
         return repository.findBySavedAtBetween(start, end);
     }
+
+    @GetMapping("/device/{deviceId}")
+    public List<ExecutionLog> findByDeviceId(@PathVariable Long deviceId) {
+        return repository.findByFunctionInstance_DeviceIdOrderByExecutedAtDesc(deviceId);
+    }
 }

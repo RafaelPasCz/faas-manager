@@ -26,4 +26,6 @@ public interface FunctionInstanceRepository extends JpaRepository<FunctionInstan
     List<Device> findAllByActiveTrue();
     
     Optional<Device> findByIdAndActiveTrue(Long id);
+
+    List<FunctionInstance> findByFunctionId(Long id);
 }

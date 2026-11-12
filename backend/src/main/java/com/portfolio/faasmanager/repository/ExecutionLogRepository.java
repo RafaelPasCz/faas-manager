@@ -27,5 +27,7 @@ public interface ExecutionLogRepository extends JpaRepository<ExecutionLog, Long
 
     List<ExecutionLog> findByStatusCode(Integer statusCode);
 
+    List<ExecutionLog> findByFunctionInstance_DeviceIdOrderByExecutedAtDesc(Long deviceId);
+
 
 }

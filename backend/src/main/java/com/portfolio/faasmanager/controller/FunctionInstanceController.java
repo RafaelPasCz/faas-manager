@@ -103,4 +103,14 @@ public class FunctionInstanceController {
         List<FunctionInstance> instances = instanceRepository.findByDeviceId(deviceId);
         return ResponseEntity.ok(instances);
     }
+
+    @GetMapping("/function/{functionId}")
+    public ResponseEntity<List<FunctionInstance>> findByFunctionId(@PathVariable Long functionId){
+        if (functionId == null){
+            throw new AttributeException("o Id da função deve ser informao");
+        }
+        
+        List<FunctionInstance> instances = instanceRepository.findByFunctionId(functionId);
+        return ResponseEntity.ok(instances);
+    };
 }
