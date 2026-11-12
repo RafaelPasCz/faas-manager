@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card, Text, TextInput, Button, Metric, Divider } from '@tremor/react';
 
+
 export default function AddDeviceCard({ onDeviceAdded, devices = [] }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({

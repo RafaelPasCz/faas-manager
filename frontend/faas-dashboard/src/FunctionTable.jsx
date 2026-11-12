@@ -10,7 +10,7 @@ import {
   Text,
 } from '@tremor/react';
 
-export default function FunctionTable({ deviceId }) {
+export default function FunctionTable({ deviceId, refreshTrigger }) {
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +20,6 @@ export default function FunctionTable({ deviceId }) {
         const response = await fetch(`http://localhost:8080/api/function-instances/device/${deviceId}`);
         if (response.ok) {
           const data = await response.json();
-          // Filtra apenas as instâncias ativas (caso não tenha filtrado no JPA)
           setInstances(data.filter(instance => instance.active !== false));
         }
       } catch (error) {
@@ -32,11 +31,10 @@ export default function FunctionTable({ deviceId }) {
 
     if (deviceId) {
       fetchInstances();
-      // Opcional: Atualizar a tabela a cada 15 segundos para refletir mudanças de status (DEPLOYING -> IDLE)
       const interval = setInterval(fetchInstances, 15000);
       return () => clearInterval(interval);
     }
-  }, [deviceId]);
+  }, [deviceId, refreshTrigger]);
 
   const getStatusColor = (status) => {
     if (!status) return 'gray';
