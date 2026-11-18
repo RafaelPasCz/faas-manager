@@ -63,3 +63,8 @@ hs_err_pid*
 # Sistema Operacional
 .DS_Store
 Thumbs.db
+
+# Variáveis de ambiente locais
+.env
+.env.*
+!.env.example
