@@ -10,7 +10,6 @@ import com.portfolio.faasmanager.repository.FunctionRepository;
 
 @RestController
 @RequestMapping("/api/function")
-@CrossOrigin(origins = "http://localhost:4200")
 public class FunctionController {
     
     private final FunctionRepository functionRepository;

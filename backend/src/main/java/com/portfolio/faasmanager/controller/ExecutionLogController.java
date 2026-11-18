@@ -12,7 +12,6 @@ import com.portfolio.faasmanager.repository.ExecutionLogRepository;
 
 @RestController
 @RequestMapping("/api/execution-logs")
-@CrossOrigin(origins = "http://localhost:4200")
 public class ExecutionLogController {
     
     private final ExecutionLogRepository repository;
