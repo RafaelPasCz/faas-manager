@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: faaswitch-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-faas_manager}
+      POSTGRES_USER: ${DB_USER:-faas_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-1234}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - faaswitch_pgdata:/var/lib/postgresql/data
+    networks:
+      - faaswitch-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-faas_admin} -d ${DB_NAME:-faas_manager}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  faas-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: faaswitch-manager
+    profiles:
+      - full
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-faas_manager}
+      DB_USER: ${DB_USER:-faas_admin}
+      DB_PASSWORD: ${DB_PASSWORD:-1234}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL:-false}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:4200}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    networks:
+      - faaswitch-net
+
+volumes:
+  faaswitch_pgdata:
+    name: faaswitch_pgdata
+
+networks:
+  faaswitch-net:
+    name: faaswitch-net
+    driver: bridge
