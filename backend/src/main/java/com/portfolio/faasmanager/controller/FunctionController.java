@@ -97,10 +97,6 @@ public class FunctionController {
               
                 function.setActive(false);
                 
-                // Inativa todas as instâncias filhas dessa função
-                // Deixar opcional mais para a frente
-                // function.getInstances().forEach(instance -> instance.setActive(false));
-                
                 functionRepository.save(function); 
                 return ResponseEntity.noContent().<Void>build();
             })
