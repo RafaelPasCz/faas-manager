@@ -21,6 +21,17 @@ public class FunctionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Function createFunction(@RequestBody Function function) {
+        if (function.getName() == null || function.getName().trim().isEmpty()) {
+            throw new AttributeException("O nome da função deve ser informado.");
+        }
+
+        String trimmedName = function.getName().trim();
+        function.setName(trimmedName);
+
+        if (functionRepository.existsByNameAndActiveTrue(trimmedName)) {
+            throw new ResourceConflictException("Já existe uma função ativa com o nome '" + trimmedName + "'.");
+        }
+
         try {
             return functionRepository.save(function);
         } catch (Exception e) {
@@ -38,9 +49,13 @@ public class FunctionController {
         if (newName == null || newName.trim().isEmpty()) {
             throw new AttributeException("O novo nome deve ser informado");
         }
+        String trimmedName = newName.trim();
+        if (functionRepository.existsByNameAndActiveTrueAndIdNot(trimmedName, id)) {
+            throw new ResourceConflictException("Já existe outra função ativa com o nome '" + trimmedName + "'.");
+        }
         return functionRepository.findById(id)
             .map(function -> {
-                function.setName(newName);
+                function.setName(trimmedName);
                 return ResponseEntity.ok(functionRepository.save(function));
             }).orElseThrow(() -> new ResourceEditException("Erro ao editar a função com o id: " + id));
     }
@@ -50,9 +65,18 @@ public class FunctionController {
         if (id == null) {
             throw new AttributeException("O Id da função deve ser informado.");
         }
+        if (functionDetails.getName() != null) {
+            String trimmedName = functionDetails.getName().trim();
+            if (trimmedName.isEmpty()) {
+                throw new AttributeException("O nome da função não pode ser vazio.");
+            }
+            if (functionRepository.existsByNameAndActiveTrueAndIdNot(trimmedName, id)) {
+                throw new ResourceConflictException("Já existe outra função ativa com o nome '" + trimmedName + "'.");
+            }
+        }
         return functionRepository.findById(id)
             .map(existingFunction -> {
-                if (functionDetails.getName() != null) existingFunction.setName(functionDetails.getName());
+                if (functionDetails.getName() != null) existingFunction.setName(functionDetails.getName().trim());
                 if (functionDetails.getDockerImage() != null) existingFunction.setDockerImage(functionDetails.getDockerImage());
                 if (functionDetails.getRuntime() != null) existingFunction.setRuntime(functionDetails.getRuntime());
                 
@@ -92,7 +116,7 @@ public class FunctionController {
 
     @GetMapping("/find-by-name")
     public ResponseEntity<Function> findByName(@RequestParam String name) {
-        return functionRepository.findByName(name)
+        return functionRepository.findByNameAndActiveTrue(name)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }

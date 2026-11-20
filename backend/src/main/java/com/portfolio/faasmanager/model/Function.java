@@ -17,7 +17,7 @@ public class Function {
     @Column(nullable = false)
     private Boolean active = true; 
 
-    @Column(nullable = false, length = 100, unique = true)
+    @Column(nullable = false, length = 100)
     private String name;
 
     @Column(name = "docker_image", nullable = false, length = 200)

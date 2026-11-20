@@ -20,4 +20,14 @@ public interface DeviceRepository extends JpaRepository<Device, Long> {
     List<Device> findAllByActiveTrue();
     
     Optional<Device> findByIdAndActiveTrue(Long id);
+
+    Optional<Device> findByNameAndActiveTrue(String name);
+
+    boolean existsByNameAndActiveTrue(String name);
+
+    boolean existsByNameAndActiveTrueAndIdNot(String name, Long id);
+
+    boolean existsByIpAddressAndActiveTrue(String ipAddress);
+
+    boolean existsByIpAddressAndActiveTrueAndIdNot(String ipAddress, Long id);
 }

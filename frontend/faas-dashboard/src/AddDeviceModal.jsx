@@ -3,6 +3,7 @@ import { Card, Text, TextInput, Button, Metric, Divider } from '@tremor/react';
 
 export default function AddDeviceModal({ isOpen, onClose, onDeviceAdded, devices = [] }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: '', ipAddress: '', isPrometheusHost: false, prometheusUrl: '',
     prometheusHostId: '', gatewayPort: '', isFunctionHost: false, nodeExporterUrl: ''
@@ -21,6 +22,7 @@ export default function AddDeviceModal({ isOpen, onClose, onDeviceAdded, devices
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     const payload = {
       name: formData.name, ipAddress: formData.ipAddress, isPrometheusHost: formData.isPrometheusHost,
@@ -39,9 +41,13 @@ export default function AddDeviceModal({ isOpen, onClose, onDeviceAdded, devices
         setFormData({ name: '', ipAddress: '', isPrometheusHost: false, prometheusUrl: '', prometheusHostId: '', gatewayPort: '', isFunctionHost: false, nodeExporterUrl: '' });
         onDeviceAdded();
         onClose(); 
+      } else {
+        const errData = await response.json().catch(() => null);
+        setError(errData?.message || 'Erro ao cadastrar dispositivo.');
       }
-    } catch (error) {
-      console.error('Erro:', error);
+    } catch (err) {
+      console.error('Erro:', err);
+      setError('Erro de rede ao tentar conectar com o servidor.');
     } finally {
       setLoading(false);
     }
@@ -94,9 +100,15 @@ export default function AddDeviceModal({ isOpen, onClose, onDeviceAdded, devices
 
             <Divider className="dark:text-zinc-400 dark:border-zinc-700">Rede</Divider>
             <TextInput name="gatewayPort" type="number" placeholder="Porta do Gateway (Opcional)" value={formData.gatewayPort} onChange={handleChange} />
+
+            {error && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-lg border border-red-200 dark:border-red-800">
+                {error}
+              </div>
+            )}
             
             <div className="grid grid-cols-2 gap-3 mt-6 pt-2">
-              <Button type="button" variant="secondary" className="w-full dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700" onClick={onClose}>
+              <Button type="button" variant="secondary" className="w-full dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700" onClick={() => { setError(null); onClose(); }}>
                 Cancelar
               </Button>
               <Button type="submit" loading={loading} className="w-full bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-900 border-transparent transition-colors">

@@ -74,7 +74,7 @@ public class PrometheusService {
 
         if (device.getNodeExporterUrl() != null && !device.getNodeExporterUrl().isBlank()) {
             try {
-                URI uri = URI.create(device.getNodeExporterUrl().trim());
+                URI uri = URI.create(ensureHttpScheme(device.getNodeExporterUrl()));
                 if (uri.getHost() != null) {
                     int port = uri.getPort() != -1 ? uri.getPort() : 9100;
                     candidates.add(uri.getHost() + ":" + port);
@@ -136,7 +136,16 @@ public class PrometheusService {
             throw new AttributeException("O dispositivo não possui um host Prometheus associado para coletar métricas.");
         }
 
-        return rewriteLoopbackIfContainerized(rawUrl.trim().replaceAll("/+$", ""));
+        return rewriteLoopbackIfContainerized(ensureHttpScheme(rawUrl));
+    }
+
+    private String ensureHttpScheme(String url) {
+        String trimmed = url.trim().replaceAll("/+$", "");
+        String lower = trimmed.toLowerCase();
+        if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+            return "http://" + trimmed;
+        }
+        return trimmed;
     }
 
     private String rewriteLoopbackIfContainerized(String url) {

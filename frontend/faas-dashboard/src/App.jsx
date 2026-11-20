@@ -228,7 +228,7 @@ function App() {
             {/* ABA 3: LOGS DE EXECUÇÃO DETALHADOS        */}
             {/* ========================================= */}
             <TabPanel>
-              <ExecutionLogsTab />
+              <ExecutionLogsTab isActive={selectedIndex === 2} />
             </TabPanel>
 
           </TabPanels>

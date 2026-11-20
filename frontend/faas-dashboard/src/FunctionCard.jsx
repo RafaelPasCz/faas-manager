@@ -72,8 +72,11 @@ export default function FunctionCard({ func, onFunctionDeleted }) {
     if (!status) return 'gray';
     switch (status.toUpperCase()) {
       case 'IDLE': return 'slate';
-      case 'EXECUTING': return 'emerald';
+      case 'EXECUTING':
+      case 'RUNNING': return 'emerald';
       case 'DEPLOYING': return 'amber';
+      case 'STOPPED': return 'gray';
+      case 'MISSING':
       case 'ERROR': return 'red';
       default: return 'gray';
     }

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  Button,
   Card,
   Table,
   TableHead,
@@ -12,7 +13,7 @@ import {
   TextInput
 } from '@tremor/react';
 
-export default function ExecutionLogsTab() {
+export default function ExecutionLogsTab({ isActive = true }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,12 +23,8 @@ export default function ExecutionLogsTab() {
   const [resultFilter, setResultFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
-  const fetchLogs = async () => {
-    setLoading(true);
+  const fetchLogs = useCallback(async (showLoader = false) => {
+    if (showLoader) setLoading(true);
     try {
       const response = await fetch('http://localhost:8080/api/execution-logs/find-all');
       if (response.ok) {
@@ -40,7 +37,14 @@ export default function ExecutionLogsTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isActive) return;
+    fetchLogs(false);
+    const interval = setInterval(() => fetchLogs(false), 10000);
+    return () => clearInterval(interval);
+  }, [isActive, fetchLogs]);
 
   const filteredLogs = logs.filter(log => {
 
@@ -144,6 +148,17 @@ export default function ExecutionLogsTab() {
               <option key={code} value={String(code)}>{code}</option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => fetchLogs(true)}
+            className="h-[38px] dark:bg-zinc-900 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-700"
+          >
+            Atualizar
+          </Button>
         </div>
       </div>
 

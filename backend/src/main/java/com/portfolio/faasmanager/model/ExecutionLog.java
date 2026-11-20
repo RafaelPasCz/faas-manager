@@ -30,6 +30,9 @@ public class ExecutionLog {
     @Column(nullable = false, updatable = false)
     private Boolean success;
 
+    @Column(name = "agent_log_id", updatable = false)
+    private Long agentLogId;
+
     @ManyToOne
     @JoinColumn(name = "function_instance_id", nullable = false, updatable = false)
     private FunctionInstance functionInstance;
@@ -52,6 +55,9 @@ public class ExecutionLog {
     public FunctionInstance getFunctionInstance() { return functionInstance; }
 
 
+    public Long getAgentLogId() { return agentLogId; }
+
     public void setStatusCode(Integer statusCode) { this.statusCode = statusCode; }
     public void setExecutedAt(LocalDateTime executedAt) { this.executedAt = executedAt; }
+    public void setAgentLogId(Long agentLogId) { this.agentLogId = agentLogId; }
 }

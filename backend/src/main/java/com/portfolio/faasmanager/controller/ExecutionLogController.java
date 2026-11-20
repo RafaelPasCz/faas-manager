@@ -9,15 +9,18 @@ import org.springframework.web.bind.annotation.*;
 import com.portfolio.faasmanager.exception.*;
 import com.portfolio.faasmanager.model.ExecutionLog;
 import com.portfolio.faasmanager.repository.ExecutionLogRepository;
+import com.portfolio.faasmanager.service.FaasAgentService;
 
 @RestController
 @RequestMapping("/api/execution-logs")
 public class ExecutionLogController {
     
     private final ExecutionLogRepository repository;
+    private final FaasAgentService faasAgentService;
 
-    public ExecutionLogController(ExecutionLogRepository repository) {
+    public ExecutionLogController(ExecutionLogRepository repository, FaasAgentService faasAgentService) {
         this.repository = repository;
+        this.faasAgentService = faasAgentService;
     }    
 
     @PostMapping
@@ -34,6 +37,7 @@ public class ExecutionLogController {
 
     @GetMapping("/find-all")
     public List<ExecutionLog> findAll() {
+        faasAgentService.syncAllDevicesExecutionLogs();
         return repository.findAll();
     }
 
@@ -70,6 +74,7 @@ public class ExecutionLogController {
 
     @GetMapping("/device/{deviceId}")
     public List<ExecutionLog> findByDeviceId(@PathVariable Long deviceId) {
+        faasAgentService.syncExecutionLogsByDeviceId(deviceId);
         return repository.findByFunctionInstance_DeviceIdOrderByExecutedAtDesc(deviceId);
     }
 }

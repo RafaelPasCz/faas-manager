@@ -5,7 +5,6 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.portfolio.faasmanager.model.Device;
 import com.portfolio.faasmanager.model.FunctionInstance;
 
 @Repository
@@ -23,9 +22,13 @@ public interface FunctionInstanceRepository extends JpaRepository<FunctionInstan
     
     Optional<FunctionInstance> findByFunctionIdAndDeviceId(Long functionId, Long deviceId);
 
-    List<Device> findAllByActiveTrue();
+    boolean existsByFunctionIdAndDeviceIdAndActiveTrue(Long functionId, Long deviceId);
+
+    Optional<FunctionInstance> findFirstByFunctionIdAndDeviceIdAndActiveTrue(Long functionId, Long deviceId);
+
+    List<FunctionInstance> findAllByActiveTrue();
     
-    Optional<Device> findByIdAndActiveTrue(Long id);
+    Optional<FunctionInstance> findByIdAndActiveTrue(Long id);
 
     List<FunctionInstance> findByFunctionId(Long id);
 }

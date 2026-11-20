@@ -34,8 +34,8 @@ export default function AddFunctionModal({ isOpen, onClose, onFunctionAdded }) {
         onFunctionAdded();
         handleClose();
       } else {
-        const errText = await response.text();
-        setError(`Erro ao salvar: ${errText}`);
+        const errData = await response.json().catch(() => null);
+        setError(errData?.message || 'Erro ao salvar a função.');
       }
     } catch (err) {
       setError('Erro de rede ao tentar conectar com o servidor.');

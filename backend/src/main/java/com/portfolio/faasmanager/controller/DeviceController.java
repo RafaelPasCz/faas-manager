@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.portfolio.faasmanager.dto.DeviceMetricsDTO;
 
 import com.portfolio.faasmanager.exception.AttributeException;
+import com.portfolio.faasmanager.exception.ResourceConflictException;
 import com.portfolio.faasmanager.exception.ResourceCreationException;
 import com.portfolio.faasmanager.exception.ResourceDeleteException;
 import com.portfolio.faasmanager.exception.ResourceEditException;
@@ -58,9 +59,14 @@ public class DeviceController {
             throw new AttributeException("O novo nome deve ser informado e não pode ser vazio");
         }
 
+        String trimmedName = newName.trim();
+        if (repository.existsByNameAndActiveTrueAndIdNot(trimmedName, id)) {
+            throw new ResourceConflictException("Já existe outro dispositivo ativo com o nome '" + trimmedName + "'.");
+        }
+
         return repository.findById(id)
             .map(device -> {
-                device.setName(newName);
+                device.setName(trimmedName);
                 Device updated = repository.save(device);
                 return ResponseEntity.ok(updated);
             }).orElseThrow(() -> new ResourceEditException("Erro ao editar o dispositivo com o id: " + id));
@@ -84,20 +90,29 @@ public class DeviceController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Device> updateDevice(@PathVariable Long id, @RequestBody Device deviceDetails) {
-        if (deviceDetails.getName() == null) throw new AttributeException("O nome não deve ser nulo");
+        if (deviceDetails.getName() == null || deviceDetails.getName().trim().isEmpty()) throw new AttributeException("O nome não deve ser nulo");
         if (id == null) throw new AttributeException("O Id do dispositivo deve ser informado");
+
+        String trimmedName = deviceDetails.getName().trim();
+        if (repository.existsByNameAndActiveTrueAndIdNot(trimmedName, id)) {
+            throw new ResourceConflictException("Já existe outro dispositivo ativo com o nome '" + trimmedName + "'.");
+        }
         
-        if (deviceDetails.getIpAddress() != null && !deviceDetails.getIpAddress().trim().isEmpty()) {
+        String trimmedIp = deviceDetails.getIpAddress() != null ? deviceDetails.getIpAddress().trim() : null;
+        if (trimmedIp != null && !trimmedIp.isEmpty()) {
             String ipv4Regex = "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$";
-            if (!deviceDetails.getIpAddress().matches(ipv4Regex)) {
+            if (!trimmedIp.matches(ipv4Regex)) {
                 throw new AttributeException("O endereço IP fornecido é inválido. Envie um IPv4 válido.");
+            }
+            if (repository.existsByIpAddressAndActiveTrueAndIdNot(trimmedIp, id)) {
+                throw new ResourceConflictException("Já existe outro dispositivo ativo com o IP '" + trimmedIp + "'.");
             }
         }
         
         return repository.findById(id)
         .map(device -> {
-            device.setName(deviceDetails.getName());
-            device.setIpAddress(deviceDetails.getIpAddress());
+            device.setName(trimmedName);
+            device.setIpAddress(trimmedIp != null && !trimmedIp.isEmpty() ? trimmedIp : null);
             device.setPrometheusUrl(deviceDetails.getPrometheusUrl());
             device.setPrometheusHostId(deviceDetails.getPrometheusHostId());
             device.setIsPrometheusHost(deviceDetails.getIsPrometheusHost());
@@ -166,21 +181,37 @@ public class DeviceController {
     @ResponseStatus(HttpStatus.CREATED)
     public Device createNewDevice(@RequestBody Device device) {
 
-        if (device.getName() == null || device.getName().isEmpty()){ 
+        if (device.getName() == null || device.getName().trim().isEmpty()){ 
             throw new AttributeException("O nome não deve ser nulo");
+        }
+
+        String trimmedName = device.getName().trim();
+        device.setName(trimmedName);
+
+        if (repository.existsByNameAndActiveTrue(trimmedName)) {
+            throw new ResourceConflictException("Já existe um dispositivo ativo com o nome '" + trimmedName + "'.");
         }
 
         String ipv4Regex = "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$";
 
-        if (device.getIpAddress() != null && !device.getIpAddress().matches(ipv4Regex)) {
-            throw new AttributeException("O endereço IP fornecido é inválido.");
+        if (device.getIpAddress() != null && !device.getIpAddress().trim().isEmpty()) {
+            String trimmedIp = device.getIpAddress().trim();
+            if (!trimmedIp.matches(ipv4Regex)) {
+                throw new AttributeException("O endereço IP fornecido é inválido.");
+            }
+            if (repository.existsByIpAddressAndActiveTrue(trimmedIp)) {
+                throw new ResourceConflictException("Já existe um dispositivo ativo com o IP '" + trimmedIp + "'.");
+            }
+            device.setIpAddress(trimmedIp);
+        } else {
+            device.setIpAddress(null);
         }
 
 
         try {
             return repository.save(device);
         } catch (DataIntegrityViolationException e) {
-            throw new ResourceCreationException("Erro nos dados do cadastro: verifique se algum campo obrigatório ficou vazio ou se já existe um dispositivo com o nome escolhido.");
+            throw new ResourceCreationException("Erro nos dados do cadastro: verifique se algum campo obrigatório ficou vazio ou inválido.");
         } catch (Exception e) {
             throw new ResourceCreationException("Erro ao criar dispositivo: " + e.getMessage());
         }
@@ -205,7 +236,7 @@ public class DeviceController {
 
     @GetMapping("/find-by-name")
     public Optional<Device> findByName(@RequestParam String name){
-        return repository.findByName(name);
+        return repository.findByNameAndActiveTrue(name);
     }
 
     @GetMapping("/{id}/created-date")
@@ -242,16 +273,21 @@ public class DeviceController {
         if (newIpAddress == null || newIpAddress.trim().isEmpty()) {
             throw new AttributeException("O novo IP deve ser informado");
         }
-    
+
+        String trimmedIp = newIpAddress.trim();
         String ipv4Regex = "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$";
     
-        if (!newIpAddress.matches(ipv4Regex)) {
+        if (!trimmedIp.matches(ipv4Regex)) {
             throw new AttributeException("O endereço IP fornecido é inválido. Envie um IPv4 válido.");
+        }
+
+        if (repository.existsByIpAddressAndActiveTrueAndIdNot(trimmedIp, id)) {
+            throw new ResourceConflictException("Já existe outro dispositivo ativo com o IP '" + trimmedIp + "'.");
         }
     
         return repository.findById(id)
             .map(device -> {
-                device.setIpAddress(newIpAddress);
+                device.setIpAddress(trimmedIp);
                 Device updated = repository.save(device);
                 return ResponseEntity.ok(updated);
             }).orElseThrow(() -> new ResourceEditException("Erro ao editar o IP do dispositivo com o id: " + id));

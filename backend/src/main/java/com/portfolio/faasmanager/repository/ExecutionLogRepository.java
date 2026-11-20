@@ -29,5 +29,6 @@ public interface ExecutionLogRepository extends JpaRepository<ExecutionLog, Long
 
     List<ExecutionLog> findByFunctionInstance_DeviceIdOrderByExecutedAtDesc(Long deviceId);
 
+    boolean existsByFunctionInstance_Device_IdAndAgentLogIdAndExecutedAt(Long deviceId, Long agentLogId, LocalDateTime executedAt);
 
 }

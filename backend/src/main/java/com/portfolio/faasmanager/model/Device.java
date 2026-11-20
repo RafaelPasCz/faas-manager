@@ -18,7 +18,7 @@ public class Device {
     @Column(nullable = false)
     private Boolean active = true; 
 
-    @Column(nullable = false, length = 100, unique = true)
+    @Column(nullable = false, length = 100)
     private String name;
 
     @Column(name = "ip_address", length = 45)
